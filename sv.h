@@ -1,0 +1,64 @@
+#ifndef SV_H_
+#define SV_H_
+
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<cstdlib>
+#include<vector>
+#include<map>
+#include<algorithm>
+#include<list>
+#include<climits>
+#include<cmath>
+
+using namespace std;
+
+//to store coordinates at alignment level
+struct mI {
+	string rn;
+	string qn;
+        int x1;//reference start
+        int x2;//reference end
+        int y1;//query start
+        int y2;//query end
+        //int m;//number of mutations
+	vector<int> mv;        
+        bool operator < (const mI& mum1) const
+        {
+                return(x1 < mum1.x1);
+        }
+        bool operator == (const mI& mum1) const
+        {
+                return x1 == mum1.x1 && x2 == mum1.x2 && y1 == mum1.y1 && y2 == mum1.y2;
+        }
+        };
+//to store coordinates at base pair level
+struct qord {
+	string name;
+	int cord;
+	};
+
+class chromPair {
+	public:
+	vector<mI> mums;	
+	vector<mI> cm; //conserved mems
+	vector<mI> ncm; //conserved mems from reverse side
+	vector<mI> gap; //gaps are represented as mums
+	vector<mI> cc; //cnv candidates
+	vector<mI> in;//stores insertion mums in reference
+	vector<mI> del; //stores deletion mums in query
+};
+
+vector<int> makeChromBucket(int refLen);
+void storeCords(vector<int> & masterRef,vector<int> & masterQ, mI & mi);
+void storeCords(map<int,vector<qord> > & mRef, mI & mi); //overloaded
+int findDist(int & x1, int & y1, int & c);//distance between the diagonal and the other MUMs
+bool detectShadow(mI & mum, vector<mI> & mums, unsigned int n);
+mI findClosest(mI & mi, vector<mI> & mums,unsigned int i, vector<int> & masterRef,vector<int> & masterQ);
+unsigned int reSet(mI & mi, vector<mI> & mums,unsigned int i);
+void recordShadow(unsigned int i, unsigned int j, vector<mI> & mums, vector<mI> & sm);
+vector<double> getCoverage(mI & mi, vector<int> & masterRef,vector<int> & masterQ);
+void findPartnerCord(mI & mi, vector<mI> & mums,char c);
+void splitByCoverage(chromPair & cp,vector<int> & chrom, vector<mI> & mums,vector<int> & masterRef, vector<int> & masterQ);
+#endif
