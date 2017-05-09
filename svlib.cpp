@@ -182,14 +182,14 @@ mI findClosest(mI & mi, vector<mI> & mums, unsigned int i,ccov & masterRef, ccov
 	for(unsigned int j=i+1; j <mums.size();j++)
 	{
 		vd = getCoverage(mums[j],masterRef,masterQ);
-		if((mums[j].y1 > mums[j].y2) && (vd[0]<2)) //on the other strand
+		if(mums[j].y1 > mums[j].y2) //on the other strand
 		{
 			ty2 = mums[j].y2; //swap the values
 			d1 = pow(abs(mi.x2 - mums[j].x1),2);
 			d2 = pow(abs(ty1 - ty2),2);
               		d = sqrt(d1+d2);
 		}
-		if((mums[j].y1 < mums[j].y2) && (vd[0]<2))
+		if(mums[j].y1 < mums[j].y2)
 		{
 			d1 = pow(abs(mi.x2 -mums[j].x1),2);
 			d2 = pow(abs(ty1 - mums[j].y1),2);
@@ -202,6 +202,38 @@ mI findClosest(mI & mi, vector<mI> & mums, unsigned int i,ccov & masterRef, ccov
 	
 	it = storeDist.begin();
 	 		
+return it->second;
+}
+////////////////////////////////////////////////////
+mI findClosest(mI & mi, vector<mI> & mums)
+{
+	map<double,mI> storeDist;
+	map<double,mI>::iterator it;
+	double d1 =0, d2 =0, d = 0;
+	int ty1 =0, ty2 =0; //to switch the coordinates of the inverted MUMs
+	ty1 = mi.y1;
+	if(mi.y1 > mi.y2) // if reverse oriented
+	{
+		ty1 = mi.y1;
+	}
+	for(unsigned int j=0; j <mums.size();j++)
+	{
+		if(mums[j].y1 > mums[j].y2) //on the other strand
+		{
+			ty2 = mums[j].y2; //swap the values
+			d1 = pow(abs(mi.x1 - mums[j].x1),2);
+			d2 = pow(abs(ty1 - ty2),2);
+			 d = sqrt(d1+d2);
+		}
+		if(mums[j].y1 < mums[j].y2)
+		{
+			d1 = pow(abs(mi.x1 -mums[j].x1),2);
+			d2 = pow(abs(ty1 - mums[j].y1),2);
+			d = sqrt(d1+d2);
+		}
+		storeDist[d] = mums[j];
+	}
+	it = storeDist.begin();
 return it->second;
 }
 ////////////////////////////////////////////////////
@@ -234,7 +266,8 @@ void recordShadow(unsigned int i, unsigned int j, vector<mI> & mums, vector<mI> 
 }
 
 //////////////////////////////////////////////
-void splitByCoverage(chromPair & cp, ccov & chrom,vector<mI> & mums, ccov & masterRef, ccov & masterQ) // returns the percentage of gap filled by the mi in mums
+//void splitByCoverage(chromPair & cp, ccov & chrom,vector<mI> & mums, ccov & masterRef, ccov & masterQ) // returns the percentage of gap filled by the mi in mums
+void splitByCoverage(chromPair & cp, ccov & chrom, ccov & masterQ)
 {
 	int cov=0, lastcov=0, nextcov =0;
 	//vector<mI> mum;
@@ -256,26 +289,27 @@ void splitByCoverage(chromPair & cp, ccov & chrom,vector<mI> & mums, ccov & mast
 			mi.x2 = i+1;
 			//mum.push_back(mi);
 			//findPartnerCord(mi,mums,'R'); //mi is the current mem, mums is the original vector of mems
-			findPartnerCord(mi,cp.mums,'R');
-			vd = getCoverage(mi,masterRef,masterQ);//reset mi.y1, and mi.y2 as 1 because we won't use them here
-			if(vd[0] >1)
+	//		findPartnerCord(mi,cp.mums,'R');
+//			vd = getCoverage(mi,chrom,masterQ);//reset mi.y1, and mi.y2 as 1 because we won't use them here
+			if(chrom[mi.x1-1] >1)
 			{
 				cp.cc.push_back(mi);
 			}
-			if(vd[0] == 1)
-			{
-				cp.cm.push_back(mi);
-			}
-			if((vd[0] <0.01) && (vd[1] >0.1))
+			//if(chrom[mi.x1-1] == 1)
+		//	{
+		//		cp.cm.push_back(mi);
+		//	}
+			if(chrom[mi.x1-1] ==0) 
 			{
 				cp.in.push_back(mi);
 			}
-			if((vd[0] > 0.1) && (vd[1] <0.01))
-			{
-				cp.del.push_back(mi);
-			}	
+//			if((vd[0] > 0.1) && (vd[1] <0.01))
+//			{
+//				cp.del.push_back(mi);
+//			}	
 				
 //cout<<mi.x1<<"\t"<<mi.x2<<"\t"<<mi.y1<<"\t"<<mi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
+//cout<<mi.x1<<"\t"<<mi.x2<<"\t"<<chrom[mi.x1-1]<<"\t"<<chrom[mi.x2-1]<<endl;//because coverage is 0 based but coordinate is 1 based
 		}
 //cout<<i<<"\t"<<chrom[i]<<endl;
 	}
@@ -311,4 +345,110 @@ void findPartnerCord(mI & mi, vector<mI> & mums,char c)//finds corresponding que
 			i++;
 		}
 	}
-}		
+}
+///////////////////////////////////////////////
+void gapCloser(mI & mi, vector<mI> ncm, vector<mI> & cm)
+{
+	mI tempmi;\
+	vector<mI> smum; //selected mums that overlap with the gap.
+//cout<<ncm.size()<<"\t"<<mi.rn<<"\t"<<mi.qn<<mi.x1<<"\t"<<mi.x2<<"\t"<<mi.y1<<"\t"<<mi.y2<<endl;
+	if((mi.x2 - mi.x1>0) && (mi.y2 - mi.y1 >0)) //checking if both of them has gaps
+	{
+		for(unsigned int i = 0;i<ncm.size();i++)
+		{
+			if((!(ncm[i].x2 < mi.x1) && !(max(ncm[i].y1,ncm[i].y2)<mi.y1)) && (!(ncm[i].x1>mi.x2) && !(min(ncm[i].y1,ncm[i].y2)>mi.y2))) //ncm mum does not fall outside
+			{
+				smum.push_back(ncm[i]);
+//cout<<ncm.size()<<"\t"<<i<<"\t"<<mi.rn<<"\t"<<mi.qn<<mi.x1<<"\t"<<mi.x2<<"\t"<<mi.y1<<"\t"<<mi.y2<<"\t"<<ncm[i].x1<<"\t"<<ncm[i].x2<<"\t"<<ncm[i].y1<<"\t"<<ncm[i].y2<<endl;
+			}
+		}
+		if(smum.size()>0)
+		{	
+			tempmi = findClosest(mi,smum); //find the closest mum from the ncm pool
+			cm.push_back(tempmi);
+//cout<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
+			mi.x1 = tempmi.x2+1; //adjust the gap coordinates
+			mi.y1 = max(tempmi.y1,tempmi.y2)+1; //adjust the gap coordinates
+//cout<<smum.size()<<" "<<smum[0].x1<<" "<<smum[0].x2<<" "<<smum[0].y1<<" "<<smum[0].y2<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.y1<<" "<<tempmi.y2<<" "<<mi.x1<<" "<<mi.y1<<endl;
+			gapCloser(mi,smum,cm);//need to make it dependent on the size of ncm if ncm size does not change, that mean no more solution is there
+		}
+		//return;
+	}
+	else
+	{
+		//return;
+	}
+	
+}
+/////////////////////////////////////////////////	
+vector<mI> findQuery(map<int,vq> & mRef, mI & mi,ccov & masterRef, ccov & masterQ)
+{
+	vector<mI> mums(mRef[mi.x1].size());//creating the vector of the coverage size
+	qord temp;
+	vector<double> vd;
+	int cov1 =0;
+	vector<int> vi;
+	bool found =true;
+	for(int i=mi.x1; i<mi.x2+1;i++)
+	{
+		//sort(mRef[i].begin(),mRef[i].end());
+		if(i == mi.x1)
+		{
+			sort(mRef[i].begin(),mRef[i].end());
+			for(unsigned int j=0;j<mRef[i].size();j++)
+			{
+				mums[j].x1 = mi.x1;
+				mums[j].x2 = mi.x2;
+				mums[j].y1 = mRef[i][j].cord;
+				//mums[j].y2 = mRef[i][j].cord;
+				mums[j].qn = mRef[i][j].name;
+				mums[j].rn = mi.rn;
+//cout<<mums[j].rn<<" "<<mums[j].x1<<" "<<mums[j].x2<<" "<<mums[j].qn<<" "<<mums[j].y1<<" "<<mums[j].y2<<endl;
+			}
+		}
+		if(i == mi.x2)
+		{
+			sort(mRef[i].begin(),mRef[i].end());
+			for(unsigned int j=0;j<mRef[i].size();j++)
+			{
+				mums[j].x1 = mi.x1;
+				mums[j].x2 = mi.x2;
+				mums[j].y2 = mRef[i][j].cord;
+			}		
+			
+		}
+	}
+
+	for(unsigned int i = 0; i< mums.size();i++)
+	{
+//cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<endl;
+		vd = getCoverage(mums[i],masterRef,masterQ); //add these in the function arguments
+		cov1 = nearestInt(vd[1]);
+//cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<vd[0]<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<" "<<vd[1]<<endl;
+		if((i>0) && (find(vi.begin(),vi.end(),cov1) == vi.end())) //if the cov1 is not found
+		{
+			found = false;
+		}
+		vi.push_back(cov1);
+	}
+	if(found == false)
+	{
+		mums.clear();
+	}	
+return mums;
+}
+/////////////////////////////////////////////////
+int nearestInt(double d)//returns the nearest integer
+{	
+	int in;
+	in = int(d);
+	if(in +0.5 >d) //if d was less than in.5
+	{
+		return in;
+	}
+	else
+	{
+		return in+1;
+	}
+}
+/////////////////////////////////////////////	

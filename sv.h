@@ -37,6 +37,10 @@ struct mI {
 struct qord {
 	string name;
 	int cord;
+	bool operator < (const qord& q1) const
+	{
+		return(name<q1.name) || ((name == q1.name) && (cord<q1.cord));
+	}
 	};
 
 class chromPair {
@@ -56,9 +60,14 @@ void storeCords(map<int,vector<qord> > & mRef, mI & mi); //overloaded
 int findDist(int & x1, int & y1, int & c);//distance between the diagonal and the other MUMs
 bool detectShadow(mI & mum, vector<mI> & mums, unsigned int n);
 mI findClosest(mI & mi, vector<mI> & mums,unsigned int i, vector<int> & masterRef,vector<int> & masterQ);
+mI findClosest(mI & mi, vector<mI> & mums);//overloaded function
 unsigned int reSet(mI & mi, vector<mI> & mums,unsigned int i);
 void recordShadow(unsigned int i, unsigned int j, vector<mI> & mums, vector<mI> & sm);
 vector<double> getCoverage(mI & mi, vector<int> & masterRef,vector<int> & masterQ);
 void findPartnerCord(mI & mi, vector<mI> & mums,char c);
-void splitByCoverage(chromPair & cp,vector<int> & chrom, vector<mI> & mums,vector<int> & masterRef, vector<int> & masterQ);
+//void splitByCoverage(chromPair & cp,vector<int> & chrom, vector<mI> & mums,vector<int> & masterRef, vector<int> & masterQ);
+void splitByCoverage(chromPair & cp,vector<int> & rchrom,vector<int> & qchrom);
+void gapCloser(mI & mi, vector<mI> ncm, vector<mI>& cm);
+vector<mI> findQuery(map<int,vector<qord> > & mRef, mI & mi,vector<int> & masterRef, vector<int> & masterQ);
+int nearestInt(double d);
 #endif
