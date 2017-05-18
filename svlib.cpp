@@ -9,7 +9,7 @@ using vq = vector<qord>;
 ccov makeChromBucket(int refLen)
 {
 	ccov v;
-	for(unsigned int i=0;i<refLen;i++)
+	for(int i=0;i<refLen;i++)
 	{
 		v.push_back(0);
 	}
@@ -271,47 +271,44 @@ void splitByCoverage(chromPair & cp, ccov & chrom, ccov & masterQ)
 {
 	int cov=0, lastcov=0, nextcov =0;
 	//vector<mI> mum;
-	mI mi;
+	mI mi,tempmi;
 	vector<double> vd;
-	mi.x1 =1;
-	for(unsigned int i =1; i<chrom.size()-1;i++)
+//	mi.x1 =1;
+	mi.x1 = cp.cm[0].x1;
+	for(unsigned int j=0;j<cp.cm.size();j++)
 	{
-		cov = chrom[i];
-		lastcov = chrom[i-1];
-		nextcov = chrom[i+1];
-		if((cov != lastcov) && (cov == nextcov))
+		//for(unsigned int i =1; i<chrom.size()-1;i++)
+		mi.x1 = cp.cm[j].x1;
+		for(int i = cp.cm[j].x1-1; i<cp.cm[j].x2;i++)
 		{
-			mi.x1 = i+1;
-			
-		}
-		if((cov == lastcov) && (cov != nextcov))
-		{
-			mi.x2 = i+1;
-			//mum.push_back(mi);
-			//findPartnerCord(mi,mums,'R'); //mi is the current mem, mums is the original vector of mems
-	//		findPartnerCord(mi,cp.mums,'R');
-//			vd = getCoverage(mi,chrom,masterQ);//reset mi.y1, and mi.y2 as 1 because we won't use them here
-			if(chrom[mi.x1-1] >1)
+			cov = chrom[i];
+			lastcov = chrom[i-1];
+			nextcov = chrom[i+1];
+			if((cov != lastcov) && (cov == nextcov))
 			{
-				cp.cc.push_back(mi);
+				mi.x1 = i+1;			
 			}
-			//if(chrom[mi.x1-1] == 1)
-		//	{
-		//		cp.cm.push_back(mi);
-		//	}
-			if(chrom[mi.x1-1] ==0) 
+			if((cov == lastcov) && (cov != nextcov))
 			{
-				cp.in.push_back(mi);
-			}
-//			if((vd[0] > 0.1) && (vd[1] <0.01))
-//			{
-//				cp.del.push_back(mi);
-//			}	
+				mi.x2 = i+1;
+			mi.rn = cp.cm[0].rn;
+			mi.qn = cp.cm[0].qn;
+				if(chrom[mi.x1-1] >1)
+				{
+					cp.cc.push_back(mi);
+//cout<<mi.rn<<"\t"<<mi.x1<<"\t"<<mi.x2<<"\t"<<chrom[mi.x1-1]<<"\t"<<chrom[mi.x2-1]<<endl;
+				}
+				if(chrom[mi.x1-1] ==0) 
+				{
+					cp.in.push_back(mi);
+				}
 				
 //cout<<mi.x1<<"\t"<<mi.x2<<"\t"<<mi.y1<<"\t"<<mi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
 //cout<<mi.x1<<"\t"<<mi.x2<<"\t"<<chrom[mi.x1-1]<<"\t"<<chrom[mi.x2-1]<<endl;//because coverage is 0 based but coordinate is 1 based
-		}
+			}
+//cout<<i<<"\t"<<mi.x1<<"\t"<<mi.x2<<"\t"<<chrom[mi.x1-1]<<"\t"<<chrom[mi.x2-1]<<endl;//because coverage is 0 based but coordinate is 1 based
 //cout<<i<<"\t"<<chrom[i]<<endl;
+		}
 	}
 	
 //return mum;	
@@ -386,7 +383,7 @@ vector<mI> findQuery(map<int,vq> & mRef, mI & mi,ccov & masterRef, ccov & master
 	vector<mI> mums(mRef[mi.x1].size());//creating the vector of the coverage size
 	qord temp;
 	vector<double> vd;
-	int cov1 =0;
+	int rcov =0,cov1 =0, pos =0;
 	vector<int> vi;
 	bool found =true;
 	for(int i=mi.x1; i<mi.x2+1;i++)
@@ -417,19 +414,29 @@ vector<mI> findQuery(map<int,vq> & mRef, mI & mi,ccov & masterRef, ccov & master
 			}		
 			
 		}
-	}
+//	}
 
 	for(unsigned int i = 0; i< mums.size();i++)
 	{
 //cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<endl;
 		vd = getCoverage(mums[i],masterRef,masterQ); //add these in the function arguments
+		rcov = nearestInt(vd[0]);
 		cov1 = nearestInt(vd[1]);
+if(rcov <5)
+{
 //cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<vd[0]<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<" "<<vd[1]<<endl;
-		if((i>0) && (find(vi.begin(),vi.end(),cov1) == vi.end())) //if the cov1 is not found
+//cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<rcov<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<" "<<cov1<<endl;
+}
+		//if((i>0) && (find(vi.begin(),vi.end(),cov1) == vi.end())) //if the cov1 is not found
+		//{
+		//	found = false;
+		//}
+		//if(rcov != cov1)
+		if(rcov == cov1)
 		{
 			found = false;
 		}
-		vi.push_back(cov1);
+		//vi.push_back(cov1);
 	}
 	if(found == false)
 	{

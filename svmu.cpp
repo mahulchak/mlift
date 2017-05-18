@@ -129,6 +129,17 @@ int main(int argc, char *argv[])
 			vd = getCoverage(tempmi,masterRef[tempmi.rn],masterQ[tempmi.qn]);
 			if((vd[0] <1.3) && (vd[1]<1.3))
 			{
+				if(allChrom[indexAln].cm.size() == 0)
+				{
+					gapmi.rn = tempmi.rn;
+					gapmi.qn = tempmi.qn;
+					gapmi.x1 = 1;
+					gapmi.x2 = tempmi.x2;
+					gapmi.y1 = 1;
+					gapmi.y2 = max(tempmi.y1,tempmi.y2);
+					allChrom[indexAln].gap.push_back(gapmi);
+				}
+					
 				if(allChrom[indexAln].cm.size() >0)//once more than one element has been entered
 				{	
 					refStart = allChrom[indexAln].cm[allChrom[indexAln].cm.size() -1].x2;
@@ -147,43 +158,55 @@ int main(int argc, char *argv[])
 				}
 				allChrom[indexAln].cm.push_back(tempmi);
 				count = count + tempmi.x2 - tempmi.x1; //keeping a count of total unique alignment
-	//			cout<<"cm\t"<<indexAln<<"\t"<<tempmi.x1<<"\t"<<tempmi.x2<<"\t"<<tempmi.y1<<"\t"<<tempmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
+				//cout<<"cm\t"<<indexAln<<"\t"<<tempmi.x1<<"\t"<<tempmi.x2<<"\t"<<tempmi.y1<<"\t"<<tempmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
 			}
-			if(!(vd[0] <1.3) && !(vd[1]<1.3))	
+			//if(!(vd[0] <1.3) && !(vd[1]<1.3))	
+			else
 			{
 				 allChrom[indexAln].ncm.push_back(tempmi);
 				//cout<<"ncm\t"<<indexAln<<"\t"<<tempmi.x1<<"\t"<<tempmi.x2<<"\t"<<tempmi.y1<<"\t"<<tempmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
 			}
 		}
 //cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
-		for(unsigned int i=0;i<allChrom[indexAln].gap.size();i++)
+//cout<<"Beginning gap filling for "<<indexAln<<endl;
+		if(allChrom[indexAln].cm.size()>10) //if less than 10 unique regions map to an alignment
 		{
-			tempmi = allChrom[indexAln].gap[i];
-//			gapCloser(allChrom[indexAln].gap[i], allChrom[indexAln].ncm, allChrom[indexAln].cm);
-			gapCloser(tempmi, allChrom[indexAln].ncm, allChrom[indexAln].cm);
+			hcp[allChrom[indexAln].cm[0].rn].push_back(indexAln);//homologous alignment
+			
+			for(unsigned int i=0;i<allChrom[indexAln].gap.size();i++)
+			{
+				tempmi = allChrom[indexAln].gap[i];
+//				gapCloser(allChrom[indexAln].gap[i], allChrom[indexAln].ncm, allChrom[indexAln].cm);
+				gapCloser(tempmi, allChrom[indexAln].ncm, allChrom[indexAln].cm);
 //cout<<"up "<<allChrom[indexAln].gap.size()<<" "<<i<<" "<<allChrom[indexAln].gap[i].x1<<" "<<allChrom[indexAln].gap[i].x2<<" "<<allChrom[indexAln].gap[i].y1<<" "<<allChrom[indexAln].gap[i].y2<<endl;
 
+			}
 		}
+		allChrom[indexAln].mums.clear();
 //cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;	 
 		count = 0; //reset count for the next alignment
 	}
-	
-	for(map<string,vector<string> >::iterator it = cp.begin(); it != cp.end();it++)
+//cout<<"Done with gap filling "<<endl;	
+	//for(map<string,vector<string> >::iterator it = cp.begin(); it != cp.end();it++)
+	for(map<string,vector<string> >::iterator it = hcp.begin(); it != hcp.end();it++)
 	{
 		refName = it->first;
-		for(unsigned int i =0; i<cp[refName].size(); i++)
+		//for(unsigned int i =0; i<cp[refName].size(); i++)
+		for(unsigned int i = 0; i<hcp[refName].size();i++)
 		{		
-			indexAln = cp[refName][i];
+			//indexAln = cp[refName][i];
+			indexAln = hcp[refName][i];
 			qName = allChrom[indexAln].mums[i].qn;
+			sort(allChrom[indexAln].cm.begin(),allChrom[indexAln].cm.end());
 			splitByCoverage(allChrom[indexAln],masterRef[refName],masterQ[qName]);
+//cout<<"Completed splitting coverage for "<<refName<<endl;
 //cout<<"came here"<<endl;
 //cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
-			sort(allChrom[indexAln].cm.begin(),allChrom[indexAln].cm.end());
 //cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
 			for(unsigned int j=0;j<allChrom[indexAln].cm.size();j++)
 			{
 				tempmi = allChrom[indexAln].cm[j];
-				cout<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
+				//cout<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
 			}
 			for(unsigned int j=0; j<allChrom[indexAln].cc.size();j++)
 			{
@@ -192,7 +215,7 @@ int main(int argc, char *argv[])
 				{
 					for(unsigned int k=0;k<vmi.size();k++)
 					{
-//						cout<<vmi[k].rn<<"\t"<<vmi[k].x1<<"\t"<<vmi[k].x2<<"\t"<<vmi[k].qn<<"\t"<<vmi[k].y1<<"\t"<<vmi[k].y2<<endl;
+						cout<<vmi[k].rn<<"\t"<<vmi[k].x1<<"\t"<<vmi[k].x2<<"\t"<<vmi[k].qn<<"\t"<<vmi[k].y1<<"\t"<<vmi[k].y2<<endl;
 					}
 				}
 			}
