@@ -237,21 +237,6 @@ mI findClosest(mI & mi, vector<mI> & mums)
 return it->second;
 }
 ////////////////////////////////////////////////////
-unsigned int reSet(mI & mi, vector<mI> & mums, unsigned int i)
-{
-	bool found = false;
-	while(found == false)//could use overloaded = operator to compare the mI objects	
-	{
-		i++;
-		//if((mi.x1 == mums[i].x1) && (mi.x2 == mums[i].x2) && (mi.y1 == mums[i].y1) && (mi.y2 == mums[i].y2))
-		if( mi == mums[i])
-		{
-			found = true;
-		}
-	}
-return i;
-}
-/////////////////////////////////////////////////
 void recordShadow(unsigned int i, unsigned int j, vector<mI> & mums, vector<mI> & sm)
 {
 	for(unsigned int k = i; k<j;k++)
@@ -295,7 +280,14 @@ void splitByCoverage(chromPair & cp, ccov & chrom, ccov & masterQ)
 			mi.qn = cp.cm[0].qn;
 				if(chrom[mi.x1-1] >1)
 				{
-					cp.cc.push_back(mi);
+					if((cp.cc.size() == 0) && (mi.x2 -mi.x1 >20)) //at least 20 bp or more should show cnv
+					{
+						cp.cc.push_back(mi);
+					}
+					if((cp.cc.size() >0) && !(mi == cp.cc[cp.cc.size()-1]) && (mi.x2-mi.x1>20))
+					{
+						cp.cc.push_back(mi);
+					}
 //cout<<mi.rn<<"\t"<<mi.x1<<"\t"<<mi.x2<<"\t"<<chrom[mi.x1-1]<<"\t"<<chrom[mi.x2-1]<<endl;
 				}
 				if(chrom[mi.x1-1] ==0) 
@@ -304,10 +296,8 @@ void splitByCoverage(chromPair & cp, ccov & chrom, ccov & masterQ)
 				}
 				
 //cout<<mi.x1<<"\t"<<mi.x2<<"\t"<<mi.y1<<"\t"<<mi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
-//cout<<mi.x1<<"\t"<<mi.x2<<"\t"<<chrom[mi.x1-1]<<"\t"<<chrom[mi.x2-1]<<endl;//because coverage is 0 based but coordinate is 1 based
 			}
 //cout<<i<<"\t"<<mi.x1<<"\t"<<mi.x2<<"\t"<<chrom[mi.x1-1]<<"\t"<<chrom[mi.x2-1]<<endl;//because coverage is 0 based but coordinate is 1 based
-//cout<<i<<"\t"<<chrom[i]<<endl;
 		}
 	}
 	
@@ -348,8 +338,8 @@ void gapCloser(mI & mi, vector<mI> ncm, vector<mI> & cm)
 {
 	mI tempmi;\
 	vector<mI> smum; //selected mums that overlap with the gap.
-//cout<<ncm.size()<<"\t"<<mi.rn<<"\t"<<mi.qn<<mi.x1<<"\t"<<mi.x2<<"\t"<<mi.y1<<"\t"<<mi.y2<<endl;
 	if((mi.x2 - mi.x1>0) && (mi.y2 - mi.y1 >0)) //checking if both of them has gaps
+	//if((mi.x2 - mi.x1>0) || (mi.y2 - mi.y1 >0)) //checking if either of them has gaps
 	{
 		for(unsigned int i = 0;i<ncm.size();i++)
 		{
@@ -383,60 +373,32 @@ vector<mI> findQuery(map<int,vq> & mRef, mI & mi,ccov & masterRef, ccov & master
 	vector<mI> mums(mRef[mi.x1].size());//creating the vector of the coverage size
 	qord temp;
 	vector<double> vd;
-	int rcov =0,cov1 =0, pos =0;
+	int rcov =0,cov1 =0;
 	vector<int> vi;
-	bool found =true;
-	for(int i=mi.x1; i<mi.x2+1;i++)
+	bool found =false;
+	sort(mRef[mi.x1].begin(),mRef[mi.x1].end());
+	sort(mRef[mi.x2].begin(),mRef[mi.x2].end());
+	for(unsigned int j=0; j<mRef[mi.x1].size();j++)
 	{
-		//sort(mRef[i].begin(),mRef[i].end());
-		if(i == mi.x1)
-		{
-			sort(mRef[i].begin(),mRef[i].end());
-			for(unsigned int j=0;j<mRef[i].size();j++)
-			{
-				mums[j].x1 = mi.x1;
-				mums[j].x2 = mi.x2;
-				mums[j].y1 = mRef[i][j].cord;
-				//mums[j].y2 = mRef[i][j].cord;
-				mums[j].qn = mRef[i][j].name;
-				mums[j].rn = mi.rn;
-//cout<<mums[j].rn<<" "<<mums[j].x1<<" "<<mums[j].x2<<" "<<mums[j].qn<<" "<<mums[j].y1<<" "<<mums[j].y2<<endl;
-			}
-		}
-		if(i == mi.x2)
-		{
-			sort(mRef[i].begin(),mRef[i].end());
-			for(unsigned int j=0;j<mRef[i].size();j++)
-			{
-				mums[j].x1 = mi.x1;
-				mums[j].x2 = mi.x2;
-				mums[j].y2 = mRef[i][j].cord;
-			}		
-			
-		}
-//	}
+		mums[j].x1 = mi.x1;
+		mums[j].x2 = mi.x2;
+		mums[j].y1 = mRef[mi.x1][j].cord;	
+		mums[j].y2 = mRef[mi.x2][j].cord;
+		mums[j].qn = mRef[mi.x1][j].name;
+		mums[j].rn = mi.rn;
+	}
 
 	for(unsigned int i = 0; i< mums.size();i++)
 	{
-//cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<endl;
 		vd = getCoverage(mums[i],masterRef,masterQ); //add these in the function arguments
 		rcov = nearestInt(vd[0]);
-		cov1 = nearestInt(vd[1]);
-if(rcov <5)
-{
-//cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<vd[0]<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<" "<<vd[1]<<endl;
-//cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<rcov<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<" "<<cov1<<endl;
-}
-		//if((i>0) && (find(vi.begin(),vi.end(),cov1) == vi.end())) //if the cov1 is not found
-		//{
-		//	found = false;
-		//}
-		//if(rcov != cov1)
-		if(rcov == cov1)
+		cov1 = nearestInt(vd[1]);	
+//cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<endl;
+		if(rcov != cov1)
 		{
-			found = false;
+			found = true;
 		}
-		//vi.push_back(cov1);
+		
 	}
 	if(found == false)
 	{

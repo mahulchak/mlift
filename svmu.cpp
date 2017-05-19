@@ -21,8 +21,9 @@ int main(int argc, char *argv[])
 	map<string,ccov>masterQ; //stores sequence coverage but it can also be used to find query chromosome lengths
 	map<string,vector<string> > cp; //cp is an alias for Chromosome partner. Each reference name index has a vector of unqiue alignments which are part of these
 	map<string,vector<string> > hcp;//hcp stands for homologous cp
-	map<string,map<int,vq> > mRef; //stores the coordinates of query on reference chromosomes
 	
+	map<string,map<int,vq> > mRef; //stores the coordinates of query on reference chromosomes
+	map<string,map<int,vq> >umRef;//stores the coordinates of unique reference to query map; requires re-reading the file
 	mI tempmi,gapmi;
 
 	string foo = string(argv[1]);
@@ -114,7 +115,7 @@ int main(int argc, char *argv[])
 	{
 		indexAln = it->first;
 		sort(allChrom[indexAln].mums.begin(),allChrom[indexAln].mums.end());
-		//for(int j =15000;j<20000;j++)
+		//for(int j =5210421;j<5214175;j++)
 		//{
 		//	cout<<"2L"<<"\t"<<j;
 		//	for(unsigned int ct=0;ct<mRef["2L"][j].size();ct++)
@@ -136,7 +137,7 @@ int main(int argc, char *argv[])
 					gapmi.x1 = 1;
 					gapmi.x2 = tempmi.x2;
 					gapmi.y1 = 1;
-					gapmi.y2 = max(tempmi.y1,tempmi.y2);
+					gapmi.y2 = min(tempmi.y1,tempmi.y2);
 					allChrom[indexAln].gap.push_back(gapmi);
 				}
 					
@@ -153,21 +154,21 @@ int main(int argc, char *argv[])
 						gapmi.y1 = qStart;
 						gapmi.y2 = min(tempmi.y1,tempmi.y2);
 						allChrom[indexAln].gap.push_back(gapmi);
-				//cout<<"gap\t"<<indexAln<<"\t"<<gapmi.x1<<"\t"<<gapmi.x2<<"\t"<<gapmi.y1<<"\t"<<gapmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
+
 					}
 				}
 				allChrom[indexAln].cm.push_back(tempmi);
 				count = count + tempmi.x2 - tempmi.x1; //keeping a count of total unique alignment
 				//cout<<"cm\t"<<indexAln<<"\t"<<tempmi.x1<<"\t"<<tempmi.x2<<"\t"<<tempmi.y1<<"\t"<<tempmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
 			}
-			//if(!(vd[0] <1.3) && !(vd[1]<1.3))	
+			
 			else
 			{
 				 allChrom[indexAln].ncm.push_back(tempmi);
 				//cout<<"ncm\t"<<indexAln<<"\t"<<tempmi.x1<<"\t"<<tempmi.x2<<"\t"<<tempmi.y1<<"\t"<<tempmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
 			}
 		}
-//cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
+
 //cout<<"Beginning gap filling for "<<indexAln<<endl;
 		if(allChrom[indexAln].cm.size()>10) //if less than 10 unique regions map to an alignment
 		{
@@ -175,19 +176,19 @@ int main(int argc, char *argv[])
 			
 			for(unsigned int i=0;i<allChrom[indexAln].gap.size();i++)
 			{
-				tempmi = allChrom[indexAln].gap[i];
-//				gapCloser(allChrom[indexAln].gap[i], allChrom[indexAln].ncm, allChrom[indexAln].cm);
-				gapCloser(tempmi, allChrom[indexAln].ncm, allChrom[indexAln].cm);
-//cout<<"up "<<allChrom[indexAln].gap.size()<<" "<<i<<" "<<allChrom[indexAln].gap[i].x1<<" "<<allChrom[indexAln].gap[i].x2<<" "<<allChrom[indexAln].gap[i].y1<<" "<<allChrom[indexAln].gap[i].y2<<endl;
+//				tempmi = allChrom[indexAln].gap[i];
+				gapCloser(allChrom[indexAln].gap[i], allChrom[indexAln].ncm, allChrom[indexAln].cm);
+//				gapCloser(tempmi, allChrom[indexAln].ncm, allChrom[indexAln].cm);
+//cout<<"gap "<<" "<<allChrom[indexAln].gap[i].rn<<" "<<allChrom[indexAln].gap[i].x1<<" "<<allChrom[indexAln].gap[i].x2<<" "<<allChrom[indexAln].gap[i].qn<<" "<<allChrom[indexAln].gap[i].y1<<" "<<allChrom[indexAln].gap[i].y2<<endl;
 
 			}
 		}
-		allChrom[indexAln].mums.clear();
-//cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;	 
+		allChrom[indexAln].mums.clear(); //free up the memory
+		allChrom[indexAln].gap.clear();//free up memory;will create gaps again later
 		count = 0; //reset count for the next alignment
 	}
 //cout<<"Done with gap filling "<<endl;	
-	//for(map<string,vector<string> >::iterator it = cp.begin(); it != cp.end();it++)
+	
 	for(map<string,vector<string> >::iterator it = hcp.begin(); it != hcp.end();it++)
 	{
 		refName = it->first;
@@ -199,14 +200,20 @@ int main(int argc, char *argv[])
 			qName = allChrom[indexAln].mums[i].qn;
 			sort(allChrom[indexAln].cm.begin(),allChrom[indexAln].cm.end());
 			splitByCoverage(allChrom[indexAln],masterRef[refName],masterQ[qName]);
-//cout<<"Completed splitting coverage for "<<refName<<endl;
-//cout<<"came here"<<endl;
 //cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
-//cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
-			for(unsigned int j=0;j<allChrom[indexAln].cm.size();j++)
+			for(unsigned int j=1;j<allChrom[indexAln].cm.size();j++) //we start from 1 to get the gaps
 			{
 				tempmi = allChrom[indexAln].cm[j];
-				//cout<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
+				gapmi.rn = tempmi.rn;
+				gapmi.qn = tempmi.qn;
+				gapmi.x1 = allChrom[indexAln].cm[j-1].x2; //the end of the last ref interval
+				gapmi.x2 = tempmi.x1; //the begining of the current interval
+				gapmi.y1 = allChrom[indexAln].cm[j-1].y2; //same logic as for ref intervals
+				gapmi.y2 = tempmi.y1;
+				allChrom[indexAln].gap.push_back(gapmi);
+				//cout<<"cm "<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
+				//cout<<gapmi.rn<<" "<<gapmi.x1<<" "<<gapmi.x2<<" "<<gapmi.qn<<" "<<gapmi.y1<<" "<<gapmi.y2<<endl;
+				cout<<"mut "<<gapmi.rn<< " "<<gapmi.x1<<" "<<gapmi.qn<<" "<<gapmi.y1<<endl;
 			}
 			for(unsigned int j=0; j<allChrom[indexAln].cc.size();j++)
 			{
@@ -215,13 +222,14 @@ int main(int argc, char *argv[])
 				{
 					for(unsigned int k=0;k<vmi.size();k++)
 					{
-						cout<<vmi[k].rn<<"\t"<<vmi[k].x1<<"\t"<<vmi[k].x2<<"\t"<<vmi[k].qn<<"\t"<<vmi[k].y1<<"\t"<<vmi[k].y2<<endl;
+			//			cout<<"cnv "<<vmi[k].rn<<"\t"<<vmi[k].x1<<"\t"<<vmi[k].x2<<"\t"<<vmi[k].qn<<"\t"<<vmi[k].y1<<"\t"<<vmi[k].y2<<endl;
 					}
 				}
 			}
+			
 		}
 	}
-
+	
 		
 
 

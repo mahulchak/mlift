@@ -26,7 +26,7 @@ struct mI {
 	vector<int> mv;        
         bool operator < (const mI& mum1) const
         {
-                return(x1 < mum1.x1);
+                return(x1 < mum1.x1) || ((x1 == mum1.x1) && (x2 < mum1.x2));
         }
         bool operator == (const mI& mum1) const
         {
@@ -61,7 +61,6 @@ int findDist(int & x1, int & y1, int & c);//distance between the diagonal and th
 bool detectShadow(mI & mum, vector<mI> & mums, unsigned int n);
 mI findClosest(mI & mi, vector<mI> & mums,unsigned int i, vector<int> & masterRef,vector<int> & masterQ);
 mI findClosest(mI & mi, vector<mI> & mums);//overloaded function
-unsigned int reSet(mI & mi, vector<mI> & mums,unsigned int i);
 void recordShadow(unsigned int i, unsigned int j, vector<mI> & mums, vector<mI> & sm);
 vector<double> getCoverage(mI & mi, vector<int> & masterRef,vector<int> & masterQ);
 void findPartnerCord(mI & mi, vector<mI> & mums,char c);
