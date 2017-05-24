@@ -1,6 +1,6 @@
 #include<iostream>
 #include "sv.h"
-
+#include "seqIO.h"
 
 using namespace std;
 
@@ -24,6 +24,9 @@ int main(int argc, char *argv[])
 	
 	map<string,map<int,vq> > mRef; //stores the coordinates of query on reference chromosomes
 	map<string,map<int,vq> >umRef;//stores the coordinates of unique reference to query map; requires re-reading the file
+	map<string,string> refseq;
+	map<string,string> qseq;
+
 	mI tempmi,gapmi;
 
 	string foo = string(argv[1]);
@@ -34,7 +37,10 @@ int main(int argc, char *argv[])
 	vector<int> vi;
 	vector<mI> vmi;
 	size_t pos1,pos2,namePos;
-	ifstream fin;
+	
+	ifstream fin, refFasta, qfasta;
+
+	
 	
 	fin.open(argv[1]);
 	
@@ -201,20 +207,21 @@ int main(int argc, char *argv[])
 			sort(allChrom[indexAln].cm.begin(),allChrom[indexAln].cm.end());
 			splitByCoverage(allChrom[indexAln],masterRef[refName],masterQ[qName]);
 //cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
-			for(unsigned int j=1;j<allChrom[indexAln].cm.size();j++) //we start from 1 to get the gaps
-			{
-				tempmi = allChrom[indexAln].cm[j];
-				gapmi.rn = tempmi.rn;
-				gapmi.qn = tempmi.qn;
-				gapmi.x1 = allChrom[indexAln].cm[j-1].x2; //the end of the last ref interval
-				gapmi.x2 = tempmi.x1; //the begining of the current interval
-				gapmi.y1 = allChrom[indexAln].cm[j-1].y2; //same logic as for ref intervals
-				gapmi.y2 = tempmi.y1;
-				allChrom[indexAln].gap.push_back(gapmi);
+			annotGaps(allChrom[indexAln].cm,mRef[refName]);
+			//for(unsigned int j=1;j<allChrom[indexAln].cm.size();j++) //we start from 1 to get the gaps
+			//{
+			//	tempmi = allChrom[indexAln].cm[j];
+			//	gapmi.rn = tempmi.rn;
+			//	gapmi.qn = tempmi.qn;
+			//	gapmi.x1 = allChrom[indexAln].cm[j-1].x2; //the end of the last ref interval
+			//	gapmi.x2 = tempmi.x1; //the begining of the current interval
+			//	gapmi.y1 = allChrom[indexAln].cm[j-1].y2; //same logic as for ref intervals
+			//	gapmi.y2 = tempmi.y1;
+			//	allChrom[indexAln].gap.push_back(gapmi);
 				//cout<<"cm "<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
 				//cout<<gapmi.rn<<" "<<gapmi.x1<<" "<<gapmi.x2<<" "<<gapmi.qn<<" "<<gapmi.y1<<" "<<gapmi.y2<<endl;
-				cout<<"mut "<<gapmi.rn<< " "<<gapmi.x1<<" "<<gapmi.qn<<" "<<gapmi.y1<<endl;
-			}
+			//	cout<<"mut "<<gapmi.rn<< " "<<gapmi.x1<<" "<<gapmi.qn<<" "<<gapmi.y1<<endl;
+			//}
 			for(unsigned int j=0; j<allChrom[indexAln].cc.size();j++)
 			{
 				vmi = findQuery(mRef[refName],allChrom[indexAln].cc[j],masterRef[refName],masterQ[qName]);

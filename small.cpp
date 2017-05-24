@@ -1,9 +1,16 @@
-#include<sv.h>
+#include "sv.h"
 #include<iostream>
+#include "seqIO.h"
 
 void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //records one to one mapping
 {
-	fin.open(argv[1]);
+	string refName,qName,indexAln,line;
+	size_t pos1,pos2,namePos;
+	int refLen=0,qLen=0,count =0,indelPos =0, refStart =0, qStart =0, refEnd =0, qEnd = 0;
+	vector<int> vi;
+	
+	mI tempmi;
+//	fin.open(argv[1]);
 	while(getline(fin,line))
 	{
 		if(line.find('>') != string::npos)//start of an aligning chromosome description
@@ -32,7 +39,7 @@ void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //
 				tempmi.mv = vi;
 				if(find(cm.begin(),cm.end(),tempmi) != cm.end()) //if tempmi is present within the unique alignments
 				{
-					storeCords(umRef[refName],tempmi); //add the new mRef or umRef here
+					storeCords(umRef,tempmi); //add the new mRef or umRef here
 				}
 				vi.clear();//reset it once its values are used
 			}
@@ -51,6 +58,8 @@ void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //
 			tempmi.y1 = qStart;
 			tempmi.y2 = qEnd;
 			count = 0;
+		}
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,11 +74,11 @@ void readfasta(ifstream & fin,map<string, string> & fastaseq) //reading fasta fi
 		}
 		if(str[0] != '>')
 		{
-			fastaseq[index].append(str)
+			fastaseq[index].append(str);
 		}
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void callsmall(map<int,vector<qord> > & umRef, map<string,string> & refseq, map<string, string> & qseq) //calls SNPs and indels from unique alignments
-{
+//void callSmall(map<int,vector<qord> > & umRef, map<string,string> & refseq, map<string, string> & qseq) //calls SNPs and indels contained within aligned regions
+//{
 	
