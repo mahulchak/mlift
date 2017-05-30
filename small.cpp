@@ -27,11 +27,17 @@ void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //
 		}
 		if((line.size() <10) && (refName != "") && (count > -1))
 		{
-			indelPos = abs(stoi(line));
-			refStart = refStart + indelPos;
+
+			indelPos = stoi(line);
+			refStart = refStart + abs(indelPos);
 			if(indelPos <0)
 			{
-				refStart = refStart * (-1);
+				//refStart = refStart * (-1);
+				vi.push_back(refStart*-1);
+			}
+			if(indelPos > 0)
+			{
+				vi.push_back(refStart);
 			}
 			vi.push_back(refStart);
 			if(indelPos ==0) //reached the end of the indel description
@@ -79,6 +85,55 @@ void readfasta(ifstream & fin,map<string, string> & fastaseq) //reading fasta fi
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//void callSmall(map<int,vector<qord> > & umRef, map<string,string> & refseq, map<string, string> & qseq) //calls SNPs and indels contained within aligned regions
-//{
+void callSmall(string & refName,map<int,vector<qord> > & umRef, string & refseq, string & qseq) //just get the individual sequences passed
+{
+	int refPos =0,pos =0,refGap =0,qGap =0;
+	qord lq,delStart;//lq is last qord :P
+	vector<qord> tq; //creating one element
+	vector<int> ti;
 	
+	for(map<int,vector<qord> >::iterator it= umRef.begin();it != umRef.end();it++)
+	{
+		pos = it->first;
+		if(umRef[pos].size() >1)
+		{
+			sort(umRef[pos].begin(),umRef[pos].end());//sort the coordinates to remain consistent
+		}
+		if(umRef[pos].size() == 1) //a mapping is present
+		{
+			refGap = (pos - refPos);
+			qGap = abs(lq.cord - umRef[pos][0].cord);
+			if((refGap == 1) && (qGap == 1))
+			{
+				if(tq.size()>0)
+				{
+					cout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
+					tq.clear();
+					ti.clear();
+				}
+				cout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+			}
+			if((refGap == 1) && (qGap ==0))
+			{
+				tq.push_back(lq);
+				ti.push_back(pos);
+			}
+			//if((refGap == 0) && (qGap == 1))
+			if((refGap == 1) && (qGap>1))
+			{
+				cout<<"INS "<<refName<<" "<<pos<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<lq.cord<<" "<<umRef[pos][0].cord<<endl;
+				//gq.push_back(umRef[pos][0]);
+				//gi.push_back(refPos);
+				//if(tq.size() > 0)
+				//{
+				//	cout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
+				//	tq.clear();
+				//	ti.clear();
+				//}
+					
+			}	
+			lq = umRef[pos][0];
+			refPos = pos;
+		}
+	}
+}				

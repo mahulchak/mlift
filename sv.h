@@ -71,4 +71,5 @@ vector<mI> findQuery(map<int,vector<qord> > & mRef, mI & mi,vector<int> & master
 int nearestInt(double d);
 void annotGaps(vector<mI> & cm,map<int,vector<qord> > & mRef);
 void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef);
+void callSmall(string & refName,map<int,vector<qord> > & umRef, string & refseq, string & qseq);
 #endif

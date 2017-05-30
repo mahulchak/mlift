@@ -73,13 +73,22 @@ int main(int argc, char *argv[])
 	
 		if((line.size() <10) && (refName != "") && (count > -1))
 		{
-			indelPos = abs(stoi(line));
-			refStart = refStart + indelPos;
+			//indelPos = abs(stoi(line));
+			indelPos = stoi(line);
+			refStart = refStart + abs(indelPos);
 			if(indelPos <0)
 			{
-				refStart = refStart * (-1);
+//				refStart = refStart * (-1);
+				vi.push_back(refStart*-1);
+//cout<<refName<<"\t"<<(refStart*-1)<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
 			}
-			vi.push_back(refStart);
+			if(indelPos > 0)
+			{
+				vi.push_back(refStart);
+//cout<<refName<<"\t"<<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
+			}
+
+//cout<<refName<<"\t"<<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
 			if(indelPos ==0) //reached the end of the indel description
 			{
 				tempmi.mv = vi;
@@ -121,15 +130,15 @@ int main(int argc, char *argv[])
 	{
 		indexAln = it->first;
 		sort(allChrom[indexAln].mums.begin(),allChrom[indexAln].mums.end());
-		//for(int j =5210421;j<5214175;j++)
-		//{
-		//	cout<<"2L"<<"\t"<<j;
-		//	for(unsigned int ct=0;ct<mRef["2L"][j].size();ct++)
-		//	{
-		//		cout<<"\t"<<mRef["2L"][j][ct].name<<"\t"<<mRef["2L"][j][ct].cord;
-		//	}
-		//	cout<<endl;
-		//}
+		for(int j =16000;j<17500;j++)
+		{
+			cout<<"2L"<<"\t"<<j;
+			for(unsigned int ct=0;ct<mRef["2L"][j].size();ct++)
+			{
+				cout<<"\t"<<mRef["2L"][j][ct].name<<"\t"<<mRef["2L"][j][ct].cord;
+			}
+			cout<<endl;
+		}
 		for(unsigned int i= 0; i<allChrom[indexAln].mums.size();i++)
 		{
 			tempmi = allChrom[indexAln].mums[i];
@@ -194,7 +203,7 @@ int main(int argc, char *argv[])
 		count = 0; //reset count for the next alignment
 	}
 //cout<<"Done with gap filling "<<endl;	
-	
+	fin.open(argv[1]);	
 	for(map<string,vector<string> >::iterator it = hcp.begin(); it != hcp.end();it++)
 	{
 		refName = it->first;
@@ -208,6 +217,8 @@ int main(int argc, char *argv[])
 			splitByCoverage(allChrom[indexAln],masterRef[refName],masterQ[qName]);
 //cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
 			annotGaps(allChrom[indexAln].cm,mRef[refName]);
+			readUniq(fin,allChrom[indexAln].cm,umRef[refName]);
+			//callSmall(refName,umRef[refName],refseq[refName],qseq[qName]);	
 			//for(unsigned int j=1;j<allChrom[indexAln].cm.size();j++) //we start from 1 to get the gaps
 			//{
 			//	tempmi = allChrom[indexAln].cm[j];
@@ -236,6 +247,7 @@ int main(int argc, char *argv[])
 			
 		}
 	}
+	fin.close();
 	
 		
 
