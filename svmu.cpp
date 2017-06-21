@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 {
 	if(argc <2)
 	{
-		cerr<<"Usage: "<<argv[0]<<" foo.delta"<<endl;
+		cerr<<"Usage: "<<argv[0]<<" foo.delta ref.fasta query.fasta"<<endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -35,13 +35,11 @@ int main(int argc, char *argv[])
 	
 	vector<double> vd;
 	vector<int> vi;
-	vector<mI> vmi;
+	vector<mI> vmi,tempVmi;
 	size_t pos1,pos2,namePos;
 	
-	ifstream fin, refFasta, qfasta;
+	ifstream fin, refFasta, qFasta;
 
-	
-	
 	fin.open(argv[1]);
 	
 	while(getline(fin,line))
@@ -53,7 +51,8 @@ int main(int argc, char *argv[])
 			refName = line.substr(1,line.find(' ')-1);
 			pos1 = line.find(' '); //position of the first space
 			pos2 = line.find(' ',pos1+1);//position of the second space
-			qName = line.substr(pos1+1, pos2-pos1); //up to the second space
+			qName = line.substr(pos1+1, pos2-pos1-1); //up to the second space
+//cout<<qName<<endl;
 			pos1 = line.find(' ',pos2+1); //recycling pos1 to find pos3
 			refLen = stoi(line.substr(pos2+1,pos1-pos2));//reference length
 			qLen = stoi(line.substr(pos1));//from last space till end 
@@ -68,27 +67,29 @@ int main(int argc, char *argv[])
 			{
 				masterQ[qName] = makeChromBucket(qLen);
 			}
-//cout<<indexAln<<"\t"<<refName<<"\t"<<qName<<"\t"<<refLen<<"\t"<<qLen<<"\t"<<refName.size()<<"\t"<<qName.size()<<endl;			
 		}
 	
 		if((line.size() <10) && (refName != "") && (count > -1))
 		{
-			//indelPos = abs(stoi(line));
-			indelPos = stoi(line);
-			refStart = refStart + abs(indelPos);
+			
+			indelPos = abs(stoi(line));
+			refStart = refStart + indelPos;
 			if(indelPos <0)
-			{
-//				refStart = refStart * (-1);
-				vi.push_back(refStart*-1);
-//cout<<refName<<"\t"<<(refStart*-1)<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
+			{	
+				refStart = refStart * (-1);
+				//vi.push_back(refStart*-1);
 			}
-			if(indelPos > 0)
-			{
+			//if(indelPos == -1)
+			//{
+			//	vi.push_back(-1);
+			//}
+			//if(indelPos > 0)
+			//{
+			//	refStart = refStart + abs(indelPos);
 				vi.push_back(refStart);
-//cout<<refName<<"\t"<<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
-			}
+			//}
 
-//cout<<refName<<"\t"<<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
+//cout<<refName<<"\t"<<indelPos<<" " <<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
 			if(indelPos ==0) //reached the end of the indel description
 			{
 				tempmi.mv = vi;
@@ -104,7 +105,7 @@ int main(int argc, char *argv[])
 		}
 		if((line.find('>') == string::npos) && (line.size() >10) && (refName != "")) //when describing alignment segments
 		{
-//cout<<line<<endl;		
+		
 				tempmi.rn = refName;
 				tempmi.qn = qName;		
 				refStart = stoi(line,&pos1);
@@ -117,28 +118,25 @@ int main(int argc, char *argv[])
 				tempmi.y2 = qEnd;
 
 				count = 0;
+	//			--refStart;//to count the mutation distance
 
-				//allChrom[indexAln].mums.push_back(tempmi);
-				//storeCords(masterRef[refName],masterQ[qName],tempmi);
-				
-//cout<<refName<<"\t"<<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<"\t"<<allChrom[indexAln].mums.size()<<endl;
 		}
 	}
 	fin.close();
-//	splitByCoverage(masterRef[refName],allChrom[indexAln].mums,masterRef[refName],masterQ[qName]);
+
 	for(chroms::iterator it = allChrom.begin();it!= allChrom.end();it++)
 	{
 		indexAln = it->first;
 		sort(allChrom[indexAln].mums.begin(),allChrom[indexAln].mums.end());
-		for(int j =16000;j<17500;j++)
-		{
-			cout<<"2L"<<"\t"<<j;
-			for(unsigned int ct=0;ct<mRef["2L"][j].size();ct++)
-			{
-				cout<<"\t"<<mRef["2L"][j][ct].name<<"\t"<<mRef["2L"][j][ct].cord;
-			}
-			cout<<endl;
-		}
+		//for(int j =20173903;j<20173935;j++)
+		//{
+		//	cout<<"2L"<<"\t"<<j;
+		//	for(unsigned int ct=0;ct<mRef["2L"][j].size();ct++)
+		//	{
+		//		cout<<"\t"<<mRef["2L"][j][ct].name<<"\t"<<mRef["2L"][j][ct].cord;
+		//	}
+		//	cout<<endl;
+	//	}
 		for(unsigned int i= 0; i<allChrom[indexAln].mums.size();i++)
 		{
 			tempmi = allChrom[indexAln].mums[i];
@@ -180,7 +178,6 @@ int main(int argc, char *argv[])
 			else
 			{
 				 allChrom[indexAln].ncm.push_back(tempmi);
-				//cout<<"ncm\t"<<indexAln<<"\t"<<tempmi.x1<<"\t"<<tempmi.x2<<"\t"<<tempmi.y1<<"\t"<<tempmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
 			}
 		}
 
@@ -193,17 +190,40 @@ int main(int argc, char *argv[])
 			{
 //				tempmi = allChrom[indexAln].gap[i];
 				gapCloser(allChrom[indexAln].gap[i], allChrom[indexAln].ncm, allChrom[indexAln].cm);
-//				gapCloser(tempmi, allChrom[indexAln].ncm, allChrom[indexAln].cm);
-//cout<<"gap "<<" "<<allChrom[indexAln].gap[i].rn<<" "<<allChrom[indexAln].gap[i].x1<<" "<<allChrom[indexAln].gap[i].x2<<" "<<allChrom[indexAln].gap[i].qn<<" "<<allChrom[indexAln].gap[i].y1<<" "<<allChrom[indexAln].gap[i].y2<<endl;
-
 			}
+	//		sort(allChrom[indexAln].cm.begin(),allChrom[indexAln].cm.end(),qusort);
 		}
+
 		allChrom[indexAln].mums.clear(); //free up the memory
 		allChrom[indexAln].gap.clear();//free up memory;will create gaps again later
 		count = 0; //reset count for the next alignment
 	}
 //cout<<"Done with gap filling "<<endl;	
-	fin.open(argv[1]);	
+	//fin.open(argv[1]);	
+	for(map<string,vector<string> >::iterator it = hcp.begin(); it != hcp.end();it++)
+	{
+		refName = it->first;
+		for(unsigned int i = 0; i<hcp[refName].size();i++)
+		{
+			fin.open(argv[1]);
+			indexAln = hcp[refName][i];
+			qName = allChrom[indexAln].mums[i].qn;
+			sort(allChrom[indexAln].cm.begin(),allChrom[indexAln].cm.end());
+			readUniq(fin,allChrom[indexAln].cm,umRef[refName]);
+			//fin.seekg(0,fin.beg);
+			fin.close();
+		}
+	}
+	refFasta.open(argv[2]);//read in the reference fasta
+	readfasta(refFasta,refseq);//load them into memory
+	refFasta.close();
+	qFasta.open(argv[3]);//read in the query fasta	
+	readfasta(qFasta,qseq);
+//cout<<"qseq is "<<qseq.size()<<" long and it has "<<qseq["2L"].size()<<endl;
+	qFasta.close();
+	
+	//cout<<"fileformat=VCFv4.2"<<endl;
+	//cout<<"#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT"<<endl;
 	for(map<string,vector<string> >::iterator it = hcp.begin(); it != hcp.end();it++)
 	{
 		refName = it->first;
@@ -212,43 +232,38 @@ int main(int argc, char *argv[])
 		{		
 			//indexAln = cp[refName][i];
 			indexAln = hcp[refName][i];
+//cout<<"qName for"<<indexAln<<"is "<<qName<<endl;
 			qName = allChrom[indexAln].mums[i].qn;
 			sort(allChrom[indexAln].cm.begin(),allChrom[indexAln].cm.end());
 			splitByCoverage(allChrom[indexAln],masterRef[refName],masterQ[qName]);
-//cout<<"size of cm is "<<allChrom[indexAln].cm.size()<<endl;
-			annotGaps(allChrom[indexAln].cm,mRef[refName]);
-			readUniq(fin,allChrom[indexAln].cm,umRef[refName]);
-			//callSmall(refName,umRef[refName],refseq[refName],qseq[qName]);	
-			//for(unsigned int j=1;j<allChrom[indexAln].cm.size();j++) //we start from 1 to get the gaps
-			//{
-			//	tempmi = allChrom[indexAln].cm[j];
-			//	gapmi.rn = tempmi.rn;
-			//	gapmi.qn = tempmi.qn;
-			//	gapmi.x1 = allChrom[indexAln].cm[j-1].x2; //the end of the last ref interval
-			//	gapmi.x2 = tempmi.x1; //the begining of the current interval
-			//	gapmi.y1 = allChrom[indexAln].cm[j-1].y2; //same logic as for ref intervals
-			//	gapmi.y2 = tempmi.y1;
-			//	allChrom[indexAln].gap.push_back(gapmi);
-				//cout<<"cm "<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
-				//cout<<gapmi.rn<<" "<<gapmi.x1<<" "<<gapmi.x2<<" "<<gapmi.qn<<" "<<gapmi.y1<<" "<<gapmi.y2<<endl;
-			//	cout<<"mut "<<gapmi.rn<< " "<<gapmi.x1<<" "<<gapmi.qn<<" "<<gapmi.y1<<endl;
-			//}
+			//annotGaps(allChrom[indexAln].cm,mRef[refName],masterRef[refName],masterQ[qName]);
+//cout<<"finished gap annotation for"<<indexAln<<" "<<qName<<endl;
+			callSmall(allChrom[indexAln].gap,refName,umRef[refName],refseq[refName],qseq[qName]);	
+//cout<<"size of gap is "<<allChrom[indexAln].gap.size()<<endl;
+
 			for(unsigned int j=0; j<allChrom[indexAln].cc.size();j++)
 			{
-				vmi = findQuery(mRef[refName],allChrom[indexAln].cc[j],masterRef[refName],masterQ[qName]);
-				if(vmi.size() >0) //if it is not empty
+				tempVmi = findQuery(mRef[refName],allChrom[indexAln].cc[j],masterRef[refName],masterQ[qName]);
+				if(tempVmi.size()>0)
 				{
-					for(unsigned int k=0;k<vmi.size();k++)
+					vmi.insert(vmi.end(),tempVmi.begin(),tempVmi.end());
+					for(unsigned int i=0; i< tempVmi.size();i++)
 					{
-			//			cout<<"cnv "<<vmi[k].rn<<"\t"<<vmi[k].x1<<"\t"<<vmi[k].x2<<"\t"<<vmi[k].qn<<"\t"<<vmi[k].y1<<"\t"<<vmi[k].y2<<endl;
+			//			cout<<tempVmi[i].rn<<" "<<tempVmi[i].x1<<" "<<tempVmi[i].x2<<" "<<tempVmi[i].qn<<" "<<tempVmi[i].y1<<" "<<tempVmi[i].y2<<endl;
 					}
 				}
 			}
+			annotGaps(allChrom[indexAln].cm,mRef[refName],masterRef[refName],masterQ[qName],vmi);			
+//cout<<"vmi is"<<vmi.size()<<" long"<<endl;
+			//for(unsigned int k=0;k<vmi.size();k++)
+			//{
+			//	cout<<"cnv "<<vmi[k].rn<<"\t"<<vmi[k].x1<<"\t"<<vmi[k].x2<<"\t"<<vmi[k].qn<<"\t"<<vmi[k].y1<<"\t"<<vmi[k].y2<<endl;
+			//}
+			
 			
 		}
 	}
-	fin.close();
-	
+
 		
 
 

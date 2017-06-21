@@ -54,9 +54,11 @@ class chromPair {
 	vector<mI> del; //stores deletion mums in query
 };
 
+bool qusort(mI mi1, mI mi2); //to sort the mI based on query coordinates
 vector<int> makeChromBucket(int refLen);
 void storeCords(vector<int> & masterRef,vector<int> & masterQ, mI & mi);
 void storeCords(map<int,vector<qord> > & mRef, mI & mi); //overloaded
+void storeCordsCm(map<int,vector<qord>> & mRef, mI & mi);
 int findDist(int & x1, int & y1, int & c);//distance between the diagonal and the other MUMs
 bool detectShadow(mI & mum, vector<mI> & mums, unsigned int n);
 mI findClosest(mI & mi, vector<mI> & mums,unsigned int i, vector<int> & masterRef,vector<int> & masterQ);
@@ -69,7 +71,8 @@ void splitByCoverage(chromPair & cp,vector<int> & rchrom,vector<int> & qchrom);
 void gapCloser(mI & mi, vector<mI> ncm, vector<mI>& cm);
 vector<mI> findQuery(map<int,vector<qord> > & mRef, mI & mi,vector<int> & masterRef, vector<int> & masterQ);
 int nearestInt(double d);
-void annotGaps(vector<mI> & cm,map<int,vector<qord> > & mRef);
+void annotGaps(vector<mI> & cm,map<int,vector<qord> > & mRef,vector<int> & masterRef, vector<int> & masterQ,vector<mI> & cnv);
 void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef);
-void callSmall(string & refName,map<int,vector<qord> > & umRef, string & refseq, string & qseq);
+void callSmall(vector<mI> & gap,string & refName,map<int,vector<qord> > & umRef, string & refseq, string & qseq);
+mI findCnvOverlap(vector<mI> & cnv,mI & mi);
 #endif

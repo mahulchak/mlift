@@ -84,49 +84,25 @@ void storeCords(map<int,vq> & mRef, mI & mi)
 	{
 		int qC = mi.y1;
 		while( refC<mi.x2+1)
-		//for(int i = refC;i<mi.x2+1;i++)
 		{
-			//ci = (refC) * (-1);
-//cout<<mi.rn<<" "<<mi.x1<<" "<<refC<<" "<<ci<<" "<<qC<<endl;
 			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //if this position does not have a indel
 			{
-//cout<<"SNP "<<mi.rn<<" "<<mi.x1<<" "<<refC<<" "<<ci<<" "<<qC<<endl;
-				temp.name = mi.qn;
-				temp.cord = qC-1; //is this needed?
-				mRef[refC-1].push_back(temp);
 				refC++;
 				qC++;
-				ci = refC * (-1);
-				if(find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())//if the next is a del
-				{
-					temp.name = mi.qn;
-					temp.cord = qC-1;
-					mRef[refC-1].push_back(temp);
-				}
-//cout<<"SNP "<<mi.rn<<" "<<mi.x1<<" "<<refC<<" "<<ci<<" "<<qC<<endl;
-			}
-			//if((find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //position has insertion
-			if(find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end())
-			{
-//cout<<"DEL "<<mi.rn<<" "<<mi.x1<<" "<<refC<<" "<<ci<<" "<<qC<<endl;
 				temp.name = mi.qn;
 				temp.cord = qC-1;
 				mRef[refC-1].push_back(temp);
-				refC++;
-				ci = refC * (-1);
-//cout<<"DEL "<<mi.rn<<" "<<mi.x1<<" "<<refC<<" "<<ci<<" "<<qC<<endl;
 			}
-			//if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())) //position has deletion
-			if(find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())
+			if((find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //position has insertion
 			{
-//cout<<"INS "<<mi.rn<<" "<<mi.x1<<" "<<refC<<" "<<ci<<" "<<qC<<endl;
+				refC++;
+				temp.name = mi.qn;
+				temp.cord = qC-1;
+				mRef[refC-1].push_back(temp);
+			}
+			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())) //position has deletion
+			{
 				qC++;
-				--ci;
-				if(find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())//if next ci is not an indel
-				{
-					refC++;			
-				}
-//cout<<"INS "<<mi.rn<<" "<<mi.x1<<" "<<refC<<" "<<ci<<" "<<qC<<endl;				
 			}
 		}
 	}
@@ -134,9 +110,7 @@ void storeCords(map<int,vq> & mRef, mI & mi)
 	{
 		int qC = mi.y1; //y1 is bigger than y2
 		while(refC<mi.x2+1)
-		//for(int i = refC;i < mi.x2+1; i++)
 		{
-			//ci = (mi.x1 + i) * (-1);
 			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //if this position does not have a indel
 			{
 				refC++;
@@ -144,7 +118,6 @@ void storeCords(map<int,vq> & mRef, mI & mi)
 				temp.name = mi.qn;
 				temp.cord = qC+1;	
 				mRef[refC-1].push_back(temp);
-				ci = refC * (-1);
 			}
 			if((find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //position has insertion
 			{
@@ -152,13 +125,10 @@ void storeCords(map<int,vq> & mRef, mI & mi)
 				temp.name = mi.qn;
 				temp.cord = qC+1;
 				mRef[refC-1].push_back(temp);				
-				ci = refC * (-1);
 			}
 			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())) //position has deletion
 			{
-				--qC;
-				--ci;
-				refC = abs(ci);
+				qC--;
 			}
 		}
 	}

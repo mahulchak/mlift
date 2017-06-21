@@ -1,12 +1,115 @@
 #include "sv.h"
 #include<iostream>
 #include "seqIO.h"
-
+/////////////////////////////////////////////////////////////////////////////
+void storeCordsCm(map<int,vector<qord> > & mRef, mI & mi)
+{
+	int refC = mi.x1;
+	int ci = refC * (-1); //ci minus i
+	qord temp;
+	vector<int>:: iterator it;
+	if(mi.y1 < mi.y2)
+	{
+		int qC = mi.y1;
+		while( refC < mi.x2+1)
+		{
+			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end()))//if this position does not have a indel
+			{
+				temp.name = mi.qn;
+				temp.cord = qC;
+				mRef[refC-1].push_back(temp);
+				refC++;
+				qC++;
+				ci = refC * (-1);
+				if(find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())//if the next is a del
+				{
+					temp.name = mi.qn;
+					temp.cord = qC;
+					mRef[refC-1].push_back(temp);
+				}
+			}
+			if(find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end()) //insertion in reference
+			{
+				temp.name = mi.qn;
+				temp.cord = qC;
+				mRef[refC-1].push_back(temp);
+				refC++;
+				ci = refC * (-1);
+			}
+			if(find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())
+			{
+				qC++;
+				it = find(mi.mv.begin(),mi.mv.end(),ci);
+				it++;
+				--ci;
+				while((*it == -1) && (it != mi.mv.end()))
+				{
+					qC++;
+					it++;
+				}
+				if((*it != -1) || (it == mi.mv.end()))
+				{
+					refC++;
+					qC++;
+					ci = refC * (-1);
+				}
+			}
+		}
+	}
+	if(mi.y1 > mi.y2 )
+	{
+		int qC = mi.y1; //y1 is bigger than y2
+		while(refC<mi.x2+1)
+		{
+			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //if this position does not have a indel
+			{
+				temp.name = mi.qn;
+				temp.cord = qC+1;
+				mRef[refC-1].push_back(temp);
+				refC++;
+				qC--;
+				ci = refC * (-1);
+				if(find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())
+				{
+					temp.name = mi.qn;
+					temp.cord = qC+1;
+					mRef[refC-1].push_back(temp);
+				}
+			}
+			if(find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end())  //position has insertion
+			{
+				temp.name = mi.qn;
+				temp.cord = qC+1;
+				mRef[refC-1].push_back(temp);
+				refC++;
+				ci = refC * (-1);
+			}
+			if(find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end()) //position has deletion
+			{
+				--qC;
+				it = find(mi.mv.begin(),mi.mv.end(),ci);
+				it++;
+				--ci;
+				while((*it == -1) && (it != mi.mv.end()))
+				{
+					qC++;
+					it++;
+				}
+				if((*it != -1) || (it == mi.mv.end()))
+				{
+					refC++;
+					--qC;
+				}
+			}
+		}
+	}
+}
+//////////////////////////////////////////////////////////
 void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //records one to one mapping
 {
 	string refName,qName,indexAln,line;
 	size_t pos1,pos2,namePos;
-	int refLen=0,qLen=0,count =0,indelPos =0, refStart =0, qStart =0, refEnd =0, qEnd = 0;
+	int Len=0,count =0,indelPos =0, refStart =0, qStart =0, refEnd =0, qEnd = 0;
 	vector<int> vi;
 	
 	mI tempmi;
@@ -20,8 +123,8 @@ void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //
 			pos2 = line.find(' ',pos1+1);//position of the second space
 			qName = line.substr(pos1+1, pos2-pos1); //up to the second space
 			pos1 = line.find(' ',pos2+1); //recycling pos1 to find pos3
-			refLen = stoi(line.substr(pos2+1,pos1-pos2));//reference length
-			qLen = stoi(line.substr(pos1));//from last space till end 
+			Len = stoi(line.substr(pos2+1,pos1-pos2));//reference length
+			Len = stoi(line.substr(pos1));//from last space till end 
 			indexAln = refName + qName;
 			count = -1;
 		}
@@ -29,23 +132,29 @@ void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //
 		{
 
 			indelPos = stoi(line);
-			refStart = refStart + abs(indelPos);
-			if(indelPos <0)
+			//refStart = refStart + abs(indelPos);
+			
+			if(indelPos < -1)
 			{
-				//refStart = refStart * (-1);
+				refStart = refStart + abs(indelPos) -1;
 				vi.push_back(refStart*-1);
+			}
+			if(indelPos == -1)
+			{
+				vi.push_back(-1);
 			}
 			if(indelPos > 0)
 			{
+				refStart = refStart + abs(indelPos);
 				vi.push_back(refStart);
 			}
-			vi.push_back(refStart);
 			if(indelPos ==0) //reached the end of the indel description
 			{
 				tempmi.mv = vi;
 				if(find(cm.begin(),cm.end(),tempmi) != cm.end()) //if tempmi is present within the unique alignments
 				{
-					storeCords(umRef,tempmi); //add the new mRef or umRef here
+					storeCordsCm(umRef,tempmi); //add the new mRef or umRef here
+//cout<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
 				}
 				vi.clear();//reset it once its values are used
 			}
@@ -64,6 +173,7 @@ void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //
 			tempmi.y1 = qStart;
 			tempmi.y2 = qEnd;
 			count = 0;
+			--refStart;
 		}
 	}
 }
@@ -85,21 +195,29 @@ void readfasta(ifstream & fin,map<string, string> & fastaseq) //reading fasta fi
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void callSmall(string & refName,map<int,vector<qord> > & umRef, string & refseq, string & qseq) //just get the individual sequences passed
+void callSmall(vector<mI> & gap,string & refName,map<int,vector<qord> > & umRef, string & refseq, string & qseq) //just get the individual sequences passed
 {
 	int refPos =0,pos =0,refGap =0,qGap =0;
 	qord lq,delStart;//lq is last qord :P
 	vector<qord> tq; //creating one element
 	vector<int> ti;
-	
+	ofstream fout;
+	fout.open("small_mut.txt");
+	mI tempmi;
+	gap.clear();//delete gaps
 	for(map<int,vector<qord> >::iterator it= umRef.begin();it != umRef.end();it++)
 	{
 		pos = it->first;
 		if(umRef[pos].size() >1)
 		{
 			sort(umRef[pos].begin(),umRef[pos].end());//sort the coordinates to remain consistent
+//cout<<"2L "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
 		}
-		if(umRef[pos].size() == 1) //a mapping is present
+		//if(umRef[pos].size() >0)
+		//{
+//cout<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+		//}
+		if(umRef[pos].size() >0) //a mapping is present
 		{
 			refGap = (pos - refPos);
 			qGap = abs(lq.cord - umRef[pos][0].cord);
@@ -107,33 +225,50 @@ void callSmall(string & refName,map<int,vector<qord> > & umRef, string & refseq,
 			{
 				if(tq.size()>0)
 				{
-					cout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
+					fout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
+					//fout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<" "<<refseq.substr(ti[0],abs(ti[0]-ti[ti.size()-1])+1)<<endl;
 					tq.clear();
 					ti.clear();
 				}
-				cout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+				//cout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+				if(refseq[pos] != qseq[umRef[pos][0].cord -1])
+				{
+					fout<<"SNP "<<refName<<" "<<pos+1<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+					//fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+
+				}
 			}
 			if((refGap == 1) && (qGap ==0))
 			{
 				tq.push_back(lq);
 				ti.push_back(pos);
 			}
-			//if((refGap == 0) && (qGap == 1))
 			if((refGap == 1) && (qGap>1))
 			{
-				cout<<"INS "<<refName<<" "<<pos<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<lq.cord<<" "<<umRef[pos][0].cord<<endl;
-				//gq.push_back(umRef[pos][0]);
-				//gi.push_back(refPos);
-				//if(tq.size() > 0)
-				//{
-				//	cout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
-				//	tq.clear();
-				//	ti.clear();
-				//}
-					
-			}	
+				fout<<"INS "<<refName<<" "<<refPos<<" "<<refPos<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<endl;
+				if(abs((lq.cord+1) - (umRef[pos][0].cord-1)) > 100)
+				{
+					tempmi.x1 = refPos;
+					tempmi.x2 = refPos;
+					tempmi.y1 = lq.cord+1;
+					tempmi.y2 = umRef[pos][0].cord -1;
+					tempmi.rn = refName;
+					tempmi.qn = umRef[pos][0].name;
+					gap.push_back(tempmi);
+				}
+				//fout<<"INS "<<refName<<" "<<refPos<<" "<<refPos<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<qseq.substr(lq.cord,abs(umRef[pos][0].cord - lq.cord)-1)<<endl;
+				fout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+				//fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+				if(refseq[pos] != qseq[umRef[pos][0].cord -1])
+				{
+					fout<<"SNP "<<refName<<" "<<pos+1<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+					//fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+				}				
+			}
+				
 			lq = umRef[pos][0];
 			refPos = pos;
 		}
 	}
+	fout.close();
 }				
