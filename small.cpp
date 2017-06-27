@@ -109,7 +109,7 @@ void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //
 {
 	string refName,qName,indexAln,line;
 	size_t pos1,pos2,namePos;
-	int Len=0,count =0,indelPos =0, refStart =0, qStart =0, refEnd =0, qEnd = 0;
+	int Len=0, count =0,indelPos =0, refStart =0, qStart =0, refEnd =0, qEnd = 0;
 	vector<int> vi;
 	
 	mI tempmi;
@@ -195,46 +195,47 @@ void readfasta(ifstream & fin,map<string, string> & fastaseq) //reading fasta fi
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void callSmall(vector<mI> & gap,string & refName,map<int,vector<qord> > & umRef, string & refseq, string & qseq) //just get the individual sequences passed
+void callSmall(mI & mi,map<int,vector<qord> > & umRef, string & refseq, string & qseq,vector<int> & seqLen) //just get the individual sequences passed
 {
-	int refPos =0,pos =0,refGap =0,qGap =0;
+	int refPos =0,refGap =0,qGap =0;
+	refPos = mi.x1 -2;
+	
 	qord lq,delStart;//lq is last qord :P
 	vector<qord> tq; //creating one element
 	vector<int> ti;
-	ofstream fout;
-	fout.open("small_mut.txt");
 	mI tempmi;
-	gap.clear();//delete gaps
-	for(map<int,vector<qord> >::iterator it= umRef.begin();it != umRef.end();it++)
+	string refName = mi.rn;
+//	for(map<int,vector<qord> >::iterator it= umRef.begin();it != umRef.end();it++)
+	for(int pos = mi.x1-1;pos < mi.x2;pos++)//pos is the coordinates from a cm
 	{
-		pos = it->first;
+		//pos = it->first;
 		if(umRef[pos].size() >1)
 		{
 			sort(umRef[pos].begin(),umRef[pos].end());//sort the coordinates to remain consistent
-//cout<<"2L "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+//cout<<"2L "<<pos<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
 		}
-		//if(umRef[pos].size() >0)
-		//{
-//cout<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
-		//}
+	
 		if(umRef[pos].size() >0) //a mapping is present
 		{
 			refGap = (pos - refPos);
 			qGap = abs(lq.cord - umRef[pos][0].cord);
+			
 			if((refGap == 1) && (qGap == 1))
 			{
 				if(tq.size()>0)
 				{
-					fout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
-					//fout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<" "<<refseq.substr(ti[0],abs(ti[0]-ti[ti.size()-1])+1)<<endl;
+					//fout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
+					////fout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<" "<<refseq.substr(ti[0],abs(ti[0]-ti[ti.size()-1])+1)<<endl;
+					cout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
 					tq.clear();
 					ti.clear();
 				}
-				//cout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+				////cout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
 				if(refseq[pos] != qseq[umRef[pos][0].cord -1])
 				{
-					fout<<"SNP "<<refName<<" "<<pos+1<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
 					//fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+					cout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+					////fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
 
 				}
 			}
@@ -245,7 +246,8 @@ void callSmall(vector<mI> & gap,string & refName,map<int,vector<qord> > & umRef,
 			}
 			if((refGap == 1) && (qGap>1))
 			{
-				fout<<"INS "<<refName<<" "<<refPos<<" "<<refPos<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<endl;
+				//fout<<"INS "<<refName<<" "<<refPos+1<<" "<<refPos+1<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<endl;
+				cout<<"INS "<<refName<<" "<<refPos+1<<" "<<refPos+1<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<endl;
 				if(abs((lq.cord+1) - (umRef[pos][0].cord-1)) > 100)
 				{
 					tempmi.x1 = refPos;
@@ -254,21 +256,28 @@ void callSmall(vector<mI> & gap,string & refName,map<int,vector<qord> > & umRef,
 					tempmi.y2 = umRef[pos][0].cord -1;
 					tempmi.rn = refName;
 					tempmi.qn = umRef[pos][0].name;
-					gap.push_back(tempmi);
+				//	gap.push_back(tempmi);
+//cout<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
 				}
-				//fout<<"INS "<<refName<<" "<<refPos<<" "<<refPos<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<qseq.substr(lq.cord,abs(umRef[pos][0].cord - lq.cord)-1)<<endl;
-				fout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
-				//fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+				////fout<<"INS "<<refName<<" "<<refPos<<" "<<refPos<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<qseq.substr(lq.cord,abs(umRef[pos][0].cord - lq.cord)-1)<<endl;
+				////fout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;//this is turned off
+				////fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
 				if(refseq[pos] != qseq[umRef[pos][0].cord -1])
 				{
-					fout<<"SNP "<<refName<<" "<<pos+1<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
-					//fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+					//fout<<"SNP "<<refName<<" "<<pos+1<<""<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+					cout<<"SNP "<<refName<<" "<<pos+1<<""<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+					////fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
 				}				
 			}
+//			if((refGap > 1) && (qGap >1) )
+//			{
+//cout<<"INS "<<refName<<" "<<refPos<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord -1<<endl;
+//			}
 				
 			lq = umRef[pos][0];
 			refPos = pos;
 		}
 	}
-	fout.close();
+	
+	
 }				

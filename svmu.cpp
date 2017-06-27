@@ -23,10 +23,10 @@ int main(int argc, char *argv[])
 	map<string,vector<string> > hcp;//hcp stands for homologous cp
 	
 	map<string,map<int,vq> > mRef; //stores the coordinates of query on reference chromosomes
-	map<string,map<int,vq> >umRef;//stores the coordinates of unique reference to query map; requires re-reading the file
+	map<string,map<int,vq> > umRef;//stores the coordinates of unique reference to query map; requires re-reading the file
 	map<string,string> refseq;
 	map<string,string> qseq;
-
+	map<string,vector<int> > seqLen;//length of sequences.first element is ref and second is query
 	mI tempmi,gapmi;
 
 	string foo = string(argv[1]);
@@ -58,6 +58,8 @@ int main(int argc, char *argv[])
 			qLen = stoi(line.substr(pos1));//from last space till end 
 			indexAln = refName + qName;
 			count = -1;
+			seqLen[indexAln].push_back(refLen);
+			seqLen[indexAln].push_back(qLen);
 			cp[refName].push_back(indexAln); //adding the alignment to the list of refName alignments
 			if(masterRef[refName].size() == 0)//if they have not been created
 			{
@@ -68,7 +70,6 @@ int main(int argc, char *argv[])
 				masterQ[qName] = makeChromBucket(qLen);
 			}
 		}
-	
 		if((line.size() <10) && (refName != "") && (count > -1))
 		{
 			
@@ -77,18 +78,10 @@ int main(int argc, char *argv[])
 			if(indelPos <0)
 			{	
 				refStart = refStart * (-1);
-				//vi.push_back(refStart*-1);
-			}
-			//if(indelPos == -1)
-			//{
-			//	vi.push_back(-1);
-			//}
-			//if(indelPos > 0)
-			//{
-			//	refStart = refStart + abs(indelPos);
-				vi.push_back(refStart);
-			//}
 
+			}
+			vi.push_back(refStart);
+		
 //cout<<refName<<"\t"<<indelPos<<" " <<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
 			if(indelPos ==0) //reached the end of the indel description
 			{
@@ -238,27 +231,22 @@ int main(int argc, char *argv[])
 			splitByCoverage(allChrom[indexAln],masterRef[refName],masterQ[qName]);
 			//annotGaps(allChrom[indexAln].cm,mRef[refName],masterRef[refName],masterQ[qName]);
 //cout<<"finished gap annotation for"<<indexAln<<" "<<qName<<endl;
-			callSmall(allChrom[indexAln].gap,refName,umRef[refName],refseq[refName],qseq[qName]);	
-//cout<<"size of gap is "<<allChrom[indexAln].gap.size()<<endl;
-
+			allChrom[indexAln].gap.clear();//flushing the gaps vector
+			//callSmall(allChrom[indexAln].cm[0],umRef[refName],refseq[refName],qseq[qName],seqLen[indexAln]);	
+			//testmi(allChrom[indexAln].cm[1],umRef[refName]);
 			for(unsigned int j=0; j<allChrom[indexAln].cc.size();j++)
 			{
 				tempVmi = findQuery(mRef[refName],allChrom[indexAln].cc[j],masterRef[refName],masterQ[qName]);
 				if(tempVmi.size()>0)
 				{
 					vmi.insert(vmi.end(),tempVmi.begin(),tempVmi.end());
-					for(unsigned int i=0; i< tempVmi.size();i++)
-					{
+		//			for(unsigned int i=0; i< tempVmi.size();i++)
+		//			{
 			//			cout<<tempVmi[i].rn<<" "<<tempVmi[i].x1<<" "<<tempVmi[i].x2<<" "<<tempVmi[i].qn<<" "<<tempVmi[i].y1<<" "<<tempVmi[i].y2<<endl;
-					}
+		//			}
 				}
 			}
-			annotGaps(allChrom[indexAln].cm,mRef[refName],masterRef[refName],masterQ[qName],vmi);			
-//cout<<"vmi is"<<vmi.size()<<" long"<<endl;
-			//for(unsigned int k=0;k<vmi.size();k++)
-			//{
-			//	cout<<"cnv "<<vmi[k].rn<<"\t"<<vmi[k].x1<<"\t"<<vmi[k].x2<<"\t"<<vmi[k].qn<<"\t"<<vmi[k].y1<<"\t"<<vmi[k].y2<<endl;
-			//}
+			annotGaps(allChrom[indexAln].cm,mRef[refName],masterRef[refName],masterQ[qName],vmi,umRef[refName],refseq[refName],qseq[qName],seqLen[indexAln]);			
 			
 			
 		}
