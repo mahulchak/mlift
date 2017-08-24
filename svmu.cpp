@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 {
 	if(argc <2)
 	{
-		cerr<<"Usage: "<<argv[0]<<" foo.delta ref.fasta query.fasta"<<endl;
+		cerr<<"Usage: "<<argv[0]<<" foo.delta ref.fasta query.fasta cutoff"<<endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -32,14 +32,15 @@ int main(int argc, char *argv[])
 	string foo = string(argv[1]);
 	string line, chromName,refName,qName,indexAln;
 	int refStart = 0, refEnd = 0, qStart = 0, qEnd = 0, refLen =0, qLen =0, count = -1,indelPos =0;
-	
+	unsigned int cutoff = 0;
+	cutoff = stoi(argv[4]);
 	vector<double> vd;
 	vector<int> vi;
 	vector<mI> vmi,tempVmi;
 	size_t pos1,pos2,namePos;
 	
 	ifstream fin, refFasta, qFasta;
-
+	ofstream fout;
 	fin.open(argv[1]);
 	
 	while(getline(fin,line))
@@ -121,14 +122,17 @@ int main(int argc, char *argv[])
 	{
 		indexAln = it->first;
 		sort(allChrom[indexAln].mums.begin(),allChrom[indexAln].mums.end());
-		//for(int j =20173903;j<20173935;j++)
-		//{
-		//	cout<<"2L"<<"\t"<<j;
-		//	for(unsigned int ct=0;ct<mRef["2L"][j].size();ct++)
-		//	{
-		//		cout<<"\t"<<mRef["2L"][j][ct].name<<"\t"<<mRef["2L"][j][ct].cord;
-		//	}
-		//	cout<<endl;
+	//	if(indexAln == "refallele2")
+	//	{
+	//	for(int j =23800;j<23840;j++)
+	//	{
+	//		cout<<"ref"<<"\t"<<j;
+	//		for(unsigned int ct=0;ct<mRef["ref"][j].size();ct++)
+	//		{
+	//			cout<<"\t"<<mRef["ref"][j][ct].name<<"\t"<<mRef["ref"][j][ct].cord;
+	//		}
+	//		cout<<endl;
+	//	}
 	//	}
 		for(unsigned int i= 0; i<allChrom[indexAln].mums.size();i++)
 		{
@@ -165,7 +169,7 @@ int main(int argc, char *argv[])
 				}
 				allChrom[indexAln].cm.push_back(tempmi);
 				count = count + tempmi.x2 - tempmi.x1; //keeping a count of total unique alignment
-				//cout<<"cm\t"<<indexAln<<"\t"<<tempmi.x1<<"\t"<<tempmi.x2<<"\t"<<tempmi.y1<<"\t"<<tempmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
+		//		cout<<"cm\t"<<indexAln<<"\t"<<tempmi.x1<<"\t"<<tempmi.x2<<"\t"<<tempmi.y1<<"\t"<<tempmi.y2<<"\t"<<vd[0]<<"\t"<<vd[1]<<endl;
 			}
 			
 			else
@@ -174,8 +178,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-//cout<<"Beginning gap filling for "<<indexAln<<endl;
-		if(allChrom[indexAln].cm.size()>10) //if less than 10 unique regions map to an alignment
+		if(allChrom[indexAln].cm.size()>cutoff)
 		{
 			hcp[allChrom[indexAln].cm[0].rn].push_back(indexAln);//homologous alignment
 			
@@ -192,7 +195,7 @@ int main(int argc, char *argv[])
 		count = 0; //reset count for the next alignment
 	}
 //cout<<"Done with gap filling "<<endl;	
-	//fin.open(argv[1]);	
+	
 	for(map<string,vector<string> >::iterator it = hcp.begin(); it != hcp.end();it++)
 	{
 		refName = it->first;
@@ -207,16 +210,25 @@ int main(int argc, char *argv[])
 			fin.close();
 		}
 	}
+//	for(int j = 23820;j<23840;j++)
+//	{
+//		cout<<"ref"<<"\t"<<j;
+//		for(unsigned int ct=0;ct<umRef["ref"][j].size();ct++)
+//		{
+//			cout<<"\t"<<umRef["ref"][j][ct].name<<"\t"<<umRef["ref"][j][ct].cord;
+//		}
+//		cout<<endl;
+//	}
 	refFasta.open(argv[2]);//read in the reference fasta
 	readfasta(refFasta,refseq);//load them into memory
 	refFasta.close();
 	qFasta.open(argv[3]);//read in the query fasta	
 	readfasta(qFasta,qseq);
-//cout<<"qseq is "<<qseq.size()<<" long and it has "<<qseq["2L"].size()<<endl;
 	qFasta.close();
-	
+		
 	//cout<<"fileformat=VCFv4.2"<<endl;
 	//cout<<"#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT"<<endl;
+	fout.open("sv.txt");
 	for(map<string,vector<string> >::iterator it = hcp.begin(); it != hcp.end();it++)
 	{
 		refName = it->first;
@@ -225,15 +237,10 @@ int main(int argc, char *argv[])
 		{		
 			//indexAln = cp[refName][i];
 			indexAln = hcp[refName][i];
-//cout<<"qName for"<<indexAln<<"is "<<qName<<endl;
 			qName = allChrom[indexAln].mums[i].qn;
 			sort(allChrom[indexAln].cm.begin(),allChrom[indexAln].cm.end());
 			splitByCoverage(allChrom[indexAln],masterRef[refName],masterQ[qName]);
-			//annotGaps(allChrom[indexAln].cm,mRef[refName],masterRef[refName],masterQ[qName]);
-//cout<<"finished gap annotation for"<<indexAln<<" "<<qName<<endl;
 			allChrom[indexAln].gap.clear();//flushing the gaps vector
-			//callSmall(allChrom[indexAln].cm[0],umRef[refName],refseq[refName],qseq[qName],seqLen[indexAln]);	
-			//testmi(allChrom[indexAln].cm[1],umRef[refName]);
 			for(unsigned int j=0; j<allChrom[indexAln].cc.size();j++)
 			{
 				tempVmi = findQuery(mRef[refName],allChrom[indexAln].cc[j],masterRef[refName],masterQ[qName]);
@@ -246,12 +253,12 @@ int main(int argc, char *argv[])
 		//			}
 				}
 			}
-			annotGaps(allChrom[indexAln].cm,mRef[refName],masterRef[refName],masterQ[qName],vmi,umRef[refName],refseq[refName],qseq[qName],seqLen[indexAln]);			
+			annotGaps(allChrom[indexAln].cm,mRef[refName],masterRef[refName],masterQ[qName],vmi,umRef[refName],refseq[refName],qseq[qName],seqLen[indexAln],fout);			
 			
 			
 		}
 	}
-
+	fout.close();
 		
 
 

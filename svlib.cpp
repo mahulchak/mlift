@@ -258,7 +258,7 @@ void splitByCoverage(chromPair & cp, ccov & chrom, ccov & masterQ)
 	//vector<mI> mum;
 	mI mi,tempmi;
 	vector<double> vd;
-//	mi.x1 =1;
+	mi.x1 =1;
 	mi.x1 = cp.cm[0].x1;
 	for(unsigned int j=0;j<cp.cm.size();j++)
 	{
@@ -283,6 +283,7 @@ void splitByCoverage(chromPair & cp, ccov & chrom, ccov & masterQ)
 					if((cp.cc.size() == 0) && (mi.x2 -mi.x1 >20)) //at least 20 bp or more should show cnv
 					{
 						cp.cc.push_back(mi);
+//cout<<mi.rn<<"\t"<<mi.x1<<"\t"<<mi.x2<<"\t"<<chrom[mi.x1-1]<<"\t"<<chrom[mi.x2-1]<<endl;
 					}
 					if((cp.cc.size() >0) && !(mi == cp.cc[cp.cc.size()-1]) && (mi.x2-mi.x1>20))
 					{
@@ -369,15 +370,21 @@ void gapCloser(mI & mi, vector<mI> ncm, vector<mI> & cm)
 /////////////////////////////////////////////////	
 vector<mI> findQuery(map<int,vq> & mRef, mI & mi,ccov & masterRef, ccov & masterQ)
 {
-	vector<mI> mums(mRef[mi.x1].size());//creating the vector of the coverage size
+	
+	
+	//vector<mI> mums(mRef[mi.x1].size());//creating the vector of the coverage size
 	qord temp;
 	vector<double> vd;
+	//vd = getCoverage(mi,masterRef,masterQ);
+	vector<mI> mums(masterRef[mi.x1-1]);
+	
 	int rcov =0,cov1 =0;
 	vector<int> vi;
 	bool found =false;
 	sort(mRef[mi.x1].begin(),mRef[mi.x1].end());
 	sort(mRef[mi.x2].begin(),mRef[mi.x2].end());
-	for(unsigned int j=0; j<mRef[mi.x1].size();j++)
+	//for(unsigned int j=0; j<mRef[mi.x1].size();j++)
+	for(unsigned int j=0; j<masterRef[mi.x1-1];j++)
 	{
 		mums[j].x1 = mi.x1;
 		mums[j].x2 = mi.x2;
@@ -392,7 +399,10 @@ vector<mI> findQuery(map<int,vq> & mRef, mI & mi,ccov & masterRef, ccov & master
 		vd = getCoverage(mums[i],masterRef,masterQ); //add these in the function arguments
 		rcov = nearestInt(vd[0]);
 		cov1 = nearestInt(vd[1]);	
-//cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<endl;
+//if(mums[i].rn == "3R" && mums[i].qn == "3R")
+//{
+//	cout<<mums[i].rn<<" "<<mums[i].x1<<" "<<mums[i].x2<<" "<<mums[i].qn<<" "<<mums[i].y1<<" "<<mums[i].y2<<endl;
+//}
 		if(rcov != cov1)
 		{
 			found = true;

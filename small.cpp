@@ -5,7 +5,8 @@
 void storeCordsCm(map<int,vector<qord> > & mRef, mI & mi)
 {
 	int refC = mi.x1;
-	int ci = refC * (-1); //ci minus i
+//	int ci = refC * (-1); //ci minus i
+	int ci = 0; //assuming that the first base in a mum will not have an insertion in query
 	qord temp;
 	vector<int>:: iterator it;
 	if(mi.y1 < mi.y2)
@@ -31,7 +32,7 @@ void storeCordsCm(map<int,vector<qord> > & mRef, mI & mi)
 			if(find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end()) //insertion in reference
 			{
 				temp.name = mi.qn;
-				temp.cord = qC;
+				temp.cord = qC-1; //because when insertion begins, query cord does not increase
 				mRef[refC-1].push_back(temp);
 				refC++;
 				ci = refC * (-1);
@@ -42,6 +43,7 @@ void storeCordsCm(map<int,vector<qord> > & mRef, mI & mi)
 				it = find(mi.mv.begin(),mi.mv.end(),ci);
 				it++;
 				--ci;
+
 				while((*it == -1) && (it != mi.mv.end()))
 				{
 					qC++;
@@ -64,7 +66,7 @@ void storeCordsCm(map<int,vector<qord> > & mRef, mI & mi)
 			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //if this position does not have a indel
 			{
 				temp.name = mi.qn;
-				temp.cord = qC+1;
+				temp.cord = qC;
 				mRef[refC-1].push_back(temp);
 				refC++;
 				qC--;
@@ -72,7 +74,7 @@ void storeCordsCm(map<int,vector<qord> > & mRef, mI & mi)
 				if(find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())
 				{
 					temp.name = mi.qn;
-					temp.cord = qC+1;
+					temp.cord = qC;
 					mRef[refC-1].push_back(temp);
 				}
 			}
@@ -92,13 +94,15 @@ void storeCordsCm(map<int,vector<qord> > & mRef, mI & mi)
 				--ci;
 				while((*it == -1) && (it != mi.mv.end()))
 				{
-					qC++;
+					//qC++;
+					--qC;
 					it++;
 				}
-				if((*it != -1) || (it == mi.mv.end()))
+				if((*it != -1) || (it == mi.mv.end()))//stretch of -1 has ended
 				{
 					refC++;
 					--qC;
+					ci = refC * (-1);
 				}
 			}
 		}
@@ -113,7 +117,7 @@ void readUniq(ifstream & fin,vector<mI> & cm, map<int,vector<qord> > & umRef) //
 	vector<int> vi;
 	
 	mI tempmi;
-//	fin.open(argv[1]);
+
 	while(getline(fin,line))
 	{
 		if(line.find('>') != string::npos)//start of an aligning chromosome description
@@ -201,9 +205,13 @@ void callSmall(mI & mi,map<int,vector<qord> > & umRef, string & refseq, string &
 	refPos = mi.x1 -2;
 	
 	qord lq,delStart;//lq is last qord :P
+	sort(umRef[mi.x1-1].begin(),umRef[mi.x1-1].end());
+	lq.cord = umRef[mi.x1-1][0].cord -1;
+
 	vector<qord> tq; //creating one element
 	vector<int> ti;
 	mI tempmi;
+
 	string refName = mi.rn;
 //	for(map<int,vector<qord> >::iterator it= umRef.begin();it != umRef.end();it++)
 	for(int pos = mi.x1-1;pos < mi.x2;pos++)//pos is the coordinates from a cm
@@ -211,10 +219,9 @@ void callSmall(mI & mi,map<int,vector<qord> > & umRef, string & refseq, string &
 		//pos = it->first;
 		if(umRef[pos].size() >1)
 		{
-			sort(umRef[pos].begin(),umRef[pos].end());//sort the coordinates to remain consistent
-//cout<<"2L "<<pos<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+//			sort(umRef[pos].begin(),umRef[pos].end());//sort the coordinates to remain consistent
+
 		}
-	
 		if(umRef[pos].size() >0) //a mapping is present
 		{
 			refGap = (pos - refPos);
@@ -225,18 +232,23 @@ void callSmall(mI & mi,map<int,vector<qord> > & umRef, string & refseq, string &
 				if(tq.size()>0)
 				{
 					//fout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
-					////fout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<" "<<refseq.substr(ti[0],abs(ti[0]-ti[ti.size()-1])+1)<<endl;
-					cout<<"DEL "<<refName<<" "<<ti[0]<<" "<<ti[ti.size()-1]<<" "<<tq[0].name<<" "<<tq[0].cord<<" "<<tq[tq.size()-1].cord<<endl;
+					cout<<"DEL\t"<<refName<<"\t"<<ti[0]<<"\t"<<ti[ti.size()-1]<<"\t"<<tq[0].name<<"\t"<<tq[0].cord<<"\t"<<tq[tq.size()-1].cord<<endl;
 					tq.clear();
 					ti.clear();
 				}
 				////cout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;
+				if(mi.y1 > mi.y2) //if inverted
+				{
+					if(qseq[umRef[pos][0].cord -1] == comp(refseq[pos]))
+					{
+						qseq[umRef[pos][0].cord -1] = refseq[pos];
+//cout<<"Check "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<comp(refseq[pos])<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+					}
+						}
 				if(refseq[pos] != qseq[umRef[pos][0].cord -1])
 				{
-					//fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
-					cout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
-					////fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
-
+					cout<<"SNP\t"<<refName<<"\t"<<pos+1<<"\t"<<refseq[pos]<<"\t"<<umRef[pos][0].name<<"\t"<<umRef[pos][0].cord<<"\t"<<qseq[umRef[pos][0].cord -1]<<endl;
+					
 				}
 			}
 			if((refGap == 1) && (qGap ==0))
@@ -247,7 +259,14 @@ void callSmall(mI & mi,map<int,vector<qord> > & umRef, string & refseq, string &
 			if((refGap == 1) && (qGap>1))
 			{
 				//fout<<"INS "<<refName<<" "<<refPos+1<<" "<<refPos+1<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<endl;
-				cout<<"INS "<<refName<<" "<<refPos+1<<" "<<refPos+1<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<endl;
+				if(mi.y1 < mi.y2) //if forward oriented
+				{
+					cout<<"INS\t"<<refName<<" "<<refPos+1<<"\t"<<refPos+1<<"\t"<<umRef[pos][0].name<<"\t"<<lq.cord+1<<"\t"<<umRef[pos][0].cord-1<<"\t"<<endl;
+				}
+				if(mi.y1 > mi.y2)
+				{
+					cout<<"INS\t"<<refName<<"\t"<<refPos+1<<" "<<refPos+1<<"\t"<<umRef[pos][0].name<<"\t"<<lq.cord-1<<"\t"<<umRef[pos][0].cord +1<<"\t"<<endl;
+				}
 				if(abs((lq.cord+1) - (umRef[pos][0].cord-1)) > 100)
 				{
 					tempmi.x1 = refPos;
@@ -260,13 +279,12 @@ void callSmall(mI & mi,map<int,vector<qord> > & umRef, string & refseq, string &
 //cout<<tempmi.rn<<" "<<tempmi.x1<<" "<<tempmi.x2<<" "<<tempmi.qn<<" "<<tempmi.y1<<" "<<tempmi.y2<<endl;
 				}
 				////fout<<"INS "<<refName<<" "<<refPos<<" "<<refPos<<" "<<umRef[pos][0].name<<" "<<lq.cord+1<<" "<<umRef[pos][0].cord-1<<" "<<qseq.substr(lq.cord,abs(umRef[pos][0].cord - lq.cord)-1)<<endl;
-				////fout<<"SNP "<<refName<<" "<<pos<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<endl;//this is turned off
-				////fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+				
 				if(refseq[pos] != qseq[umRef[pos][0].cord -1])
 				{
 					//fout<<"SNP "<<refName<<" "<<pos+1<<""<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
-					cout<<"SNP "<<refName<<" "<<pos+1<<""<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
-					////fout<<"SNP "<<refName<<" "<<pos+1<<" "<<refseq[pos]<<" "<<umRef[pos][0].name<<" "<<umRef[pos][0].cord<<" "<<qseq[umRef[pos][0].cord -1]<<endl;
+					cout<<"SNP\t"<<refName<<"\t"<<pos+1<<"\t"<<refseq[pos]<<"\t"<<umRef[pos][0].name<<"\t"<<umRef[pos][0].cord<<"\t"<<qseq[umRef[pos][0].cord -1]<<endl;
+
 				}				
 			}
 //			if((refGap > 1) && (qGap >1) )
@@ -276,8 +294,35 @@ void callSmall(mI & mi,map<int,vector<qord> > & umRef, string & refseq, string &
 				
 			lq = umRef[pos][0];
 			refPos = pos;
+			if(umRef[pos].size() >1)
+			{
+				umRef[pos].erase(umRef[pos].begin(),umRef[pos].begin()+1);//remove the first element
+			}
 		}
 	}
 	
 	
-}				
+}
+/////////////////////////////////////////////////////////////////////////
+char comp(char & N) //return the complementary nucleotide
+{
+	char c;
+	if(N == 'A')
+	{
+		c = 'T';
+	}
+	else if(N == 'T')
+	{
+		c = 'A';
+	}
+	else if(N == 'G')
+	{
+		c = 'C';
+	}	
+	else if(N == 'C')
+	{
+		c = 'G';
+	}
+
+return c;
+}			
