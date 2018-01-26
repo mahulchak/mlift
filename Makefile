@@ -1,23 +1,17 @@
-#to compile the executable for svmu, the variant caller
+#to compile the executable for mlift, the liftover program
 
 CC = g++
 CFLAGS = -g -Wall -std=c++0x 
 
-default: svmu
-svmu: svlib.o ansv.o small.o svmu.o
-	$(CC) $(CFLAGS) -o svmu svlib.o ansv.o small.o svmu.o
+default: mlift
+mlift: mllib.o mlift.o
+	$(CC) $(CFLAGS) -o mlift mllib.o mlift.o
 
-svlib.o: svlib.cpp sv.h
-	$(CC) $(CFLAGS) -c svlib.cpp
+mllib.o: mllib.cpp ml.h
+	$(CC) $(CFLAGS) -c mllib.cpp
 
-ansv.o: ansv.cpp sv.h
-	$(CC) $(CFLAGS) -c ansv.cpp
-
-small.o: small.cpp seqIO.h sv.h
-	$(CC) $(CFLAGS) -c small.cpp
-
-svmu.o: svmu.cpp sv.h seqIO.h
-	$(CC) $(CFLAGS) -c svmu.cpp
+mlift.o: mlift.cpp ml.h
+	$(CC) $(CFLAGS) -c mlift.cpp
 
 clean:
 	$(RM) *.o 

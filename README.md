@@ -1,4 +1,4 @@
-# mLiftOver
+# mlift 
 A mummer based genomic coordinate liftover tool
 
 This is a working but prototype version so use this at your own risk. If you provide a genome coordinate bed file (or simply a tab delimited file), mlift will lift the coordinates of ref genome to query genome (ref and query genome assignments are arbitrary and follow the MUMmer convention). If you use it, and has a feedback, please email me at mchakrab@uci.edu.
