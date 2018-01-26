@@ -28,6 +28,6 @@ If you want to get all copies, use
  ```
 	mlift ref2q.delta foo.bed
  ```
-	Here the delta file is the delta alignment from the nucmer run in step 2. The bed file has the genome coordinates from ref.fasta in the following tab separated format -
+Here the delta file is the delta alignment from the nucmer run in step 2. The bed file has the genome coordinates from ref.fasta in the following tab separated format -
 	
 	Chromosome_name	Start	End
