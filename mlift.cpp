@@ -24,13 +24,12 @@ int main(int argc, char *argv[])
 	map<string,map<int,vq> > mRef; //stores the coordinates of query on reference chromosomes
 	map<string,vector<int> > seqLen;//length of sequences.first element is ref and second is query
 	map<string,bool> qStrand; //stores whether query strand is forward strand or reverse strand
-	mI tempmi,gapmi,prevmi;
-
+	mI tempmi;
 	string line, chromName,refName,qName,indexAln;
 	int refStart = 0, refEnd = 0, qStart = 0, qEnd = 0, refLen =0, qLen =0, count = -1,indelPos =0;
 	vector<int> vi;
 	vector<string> vstr;
-	vector<mI> cm;
+	vector<mI> cm,vmi;
 	size_t pos1,pos2,namePos;
 	
 	ifstream fin;
@@ -39,21 +38,20 @@ int main(int argc, char *argv[])
 	while(getline(fin,line))
 	{
 		vstr = splitField(line,'\t');
-		//cout<<vstr[0]<<"\t"<<vstr[1]<<"\t"<<vstr[2]<<endl;
+//		cout<<vstr[0]<<"\t"<<vstr[1]<<"\t"<<vstr[2]<<endl;
 		tempmi.rn = vstr[0];
 		tempmi.x1 = stoi(vstr[1]);
 		tempmi.x2 = stoi(vstr[2]);
 		cm.push_back(tempmi);
+//cout<<tempmi.rn<<'\t'<<tempmi.x1<<'\t'<<tempmi.x2<<endl;		
 	}
 	fin.close();
-	fin.open(argv[1]);
-	
+	sort(cm.begin(),cm.end());
+	fin.open(argv[1]);	
 	while(getline(fin,line))
 	{
-		
 		if(line.find('>') != string::npos)//start of an aligning chromosome description
-		{
-						
+		{			
 			refName = line.substr(1,line.find(' ')-1);
 			pos1 = line.find(' '); //position of the first space
 			pos2 = line.find(' ',pos1+1);//position of the second space
@@ -64,17 +62,9 @@ int main(int argc, char *argv[])
 			qLen = stoi(line.substr(pos1));//from last space till end 
 			indexAln = refName + qName;
 			count = -1;
-			seqLen[indexAln].push_back(refLen);
-			seqLen[indexAln].push_back(qLen);
+			//seqLen[indexAln].push_back(refLen);
+			//seqLen[indexAln].push_back(qLen);
 			cp[refName].push_back(indexAln); //adding the alignment to the list of refName alignments
-			if(masterRef[refName].size() == 0)//if they have not been created
-			{
-				masterRef[refName] = makeChromBucket(refLen);
-			}
-			if(masterQ[qName].size() == 0)//if they have not been created
-			{
-				masterQ[qName] = makeChromBucket(qLen);
-			}
 		}
 		if((line.size() <10) && (refName != "") && (count > -1))
 		{
@@ -84,29 +74,21 @@ int main(int argc, char *argv[])
 			if(indelPos <0)
 			{	
 				refStart = refStart * (-1);
-
 			}
 			vi.push_back(refStart);
-		
 //cout<<refName<<"\t"<<indelPos<<" " <<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<endl;
 			if(indelPos ==0) //reached the end of the indel description
 			{
 				tempmi.mv = vi;
-				//allChrom[indexAln].mums.push_back(tempmi);
-				storeCords(masterRef[refName],masterQ[qName],tempmi);
-				storeCords(mRef[refName],tempmi);
-				tempmi.mv.clear();//delete this?
 				allChrom[indexAln].mums.push_back(tempmi);
+				tempmi.mv.clear();
 //cout<<refName<<"\t"<<refStart<<"\t"<<refEnd<<"\t"<<qName<<"\t"<<qStart<<"\t"<<qEnd<<"\t"<<allChrom[indexAln].mums.size()<<endl;
 				vi.clear();//reset it once its values are used
 			}
-				
 			count++;
-			
 		}
 		if((line.find('>') == string::npos) && (line.size() >10) && (refName != "")) //when describing alignment segments
 		{
-		
 				tempmi.rn = refName;
 				tempmi.qn = qName;		
 				refStart = stoi(line,&pos1);
@@ -117,42 +99,25 @@ int main(int argc, char *argv[])
 				tempmi.x2 = refEnd;
 				tempmi.y1 = qStart;
 				tempmi.y2 = qEnd;
-
 				count = 0;
 	//			--refStart;//to count the mutation distance
-
 		}
 	}
 	fin.close();
-	for(chroms::iterator it = allChrom.begin();it!= allChrom.end();it++)
-	{
-		indexAln = it->first;
-		sort(allChrom[indexAln].mums.begin(),allChrom[indexAln].mums.end());
-				//if(indexAln == "2L2L")
-		//{
-		//for(int j =6100162;j<6101000;j++)
-		//{
-		//	cout<<"ref"<<"\t"<<j;
-		//	for(unsigned int ct=0;ct<mRef["ref"][j].size();ct++)
-		//	{
-		//		cout<<"\t"<<mRef["ref"][j][ct].name<<"\t"<<mRef["ref"][j][ct].cord;
-		//	}
-		//	cout<<endl;
-		//}
-		//}
-			
-		
-
-	}
 
 	fout.open("lifted.txt");
 	fout<<"REF_CHROM\tREF_START\tREF_END\tQ_CHROM\tQ_START\tQ_END"<<endl;
-	//for(map<string,vector<string> >::iterator it = hcp.begin(); it != hcp.end();it++)
 	for(unsigned int i= 0;i<cm.size();i++) // cm is the user provided list of intervals
 	{
 		refName = cm[i].rn;
-		findQuery(mRef[refName],cm[i],refName);
-	
+		for(unsigned int j=0; j<cp[refName].size();j++)
+		{
+			indexAln = cp[refName][j];
+//cout<<refName<<'\t'<<cm[i].x1<<'\t'<<cm[i].x2<<'\t'<<indexAln<<'\t'<<allChrom[indexAln].mums[0].x1<<'\t'<<allChrom[indexAln].mums[0].x2<<'\t'<<allChrom[indexAln].mums[allChrom[indexAln].mums.size()-1].x1<<'\t'<<allChrom[indexAln].mums[allChrom[indexAln].mums.size()-1].x2<<endl;
+			sort(allChrom[indexAln].mums.begin(),allChrom[indexAln].mums.end());
+			vmi = findMum(allChrom[indexAln].mums,cm[i]);//find the mum corresponding to cm
+			writeLift(vmi,cm[i],fout);
+		}
 	}
 	fout.close();
 	return 0;

@@ -58,10 +58,8 @@ class chromPair {
 };
 
 bool qusort(mI mi1, mI mi2); //to sort the mI based on query coordinates
-vector<int> makeChromBucket(int refLen);
-void storeCords(vector<int> & masterRef,vector<int> & masterQ, mI & mi);
-void storeCords(vector<int> & masterQ, mI & mi);//overloaded
-void storeCords(map<int,vector<qord> > & mRef, mI & mi); //overloaded
-void findQuery(map<int,vector<qord> > & mRef, mI & mi,string & refName);
+mI liftCords(mI & cm,mI & mi); //extract the lifted coordinates
+vector<mI> findMum(vector<mI> & mums,mI & cm);
+void writeLift(vector<mI> & vmi,mI & cm,ofstream & fout);
 vector<string> splitField(string & str, char c);
 #endif

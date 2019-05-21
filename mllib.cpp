@@ -5,53 +5,21 @@ using chroms = map<string,chromPair>;
 using ccov = vector<int>;
 using vq = vector<qord>;
 
-/////////////////////////////////////////////////////////
-bool qusort(mI mi1, mI mi2)
-{
-	return (min(mi1.y1,mi1.y2) < min(mi2.y1,mi2.y2)) ||((min(mi1.y1,mi1.y2) == min(mi2.y1,mi2.y2)) && (max(mi1.y1,mi1.y2)<max(mi2.y1,mi2.y2)));
-}
-ccov makeChromBucket(int refLen)
-{
-	ccov v;
-	for(int i=0;i<refLen;i++)
-	{
-		v.push_back(0);
-	}
-return v;
-}	
 
-///////////////////////////////////////////////////////////
-void storeCords(ccov & masterRef,ccov & masterQ, mI & mi)
-{
-
-	int ty1 = 0, ty2 =0;
-	
-	if(mi.y1 > mi.y2)//if reverse oriented
-	{
-		ty1 = mi.y2;
-		ty2 = mi.y1;
-	}
-	if(mi.y1 < mi.y2)//forward oriented
-	{
-		ty1 = mi.y1;
-		ty2 = mi.y2;
-	}
-	for(int i = mi.x1-1; i<mi.x2;i++)
-	{
-		masterRef[i]++;
-	}
-	
-	for(int j = ty1-1; j<ty2;j++)
-	{
-		masterQ[j]++;
-	}
-}
 ///////////////////////////////////////////////////////
-void storeCords(map<int,vq> & mRef, mI & mi)
+mI liftCords(mI & cm,mI & mi)
 {	
 	int refC = mi.x1;
 	int ci = refC * (-1); //ci is minus i
 	qord temp;
+	mI tempmi,liftmi;//stores the positions as mI
+	tempmi.rn = cm.rn;
+	liftmi.rn = cm.rn;
+	liftmi.x1 = cm.x1;
+	liftmi.x2 = cm.x2;
+	liftmi.qn = mi.qn;
+	liftmi.y1 = 0;
+	liftmi.y2 = 0;
 	if(mi.y1 < mi.y2 ) //both are on the same strand
 	{
 		int qC = mi.y1;
@@ -64,18 +32,35 @@ void storeCords(map<int,vq> & mRef, mI & mi)
 				qC++;
 				temp.name = mi.qn;
 				temp.cord = qC-1;
-				mRef[refC-1].push_back(temp);
+				tempmi.x1 = refC-1;
+				tempmi.x2 = refC-1;
+				tempmi.y1 = temp.cord;
+				tempmi.y2 = temp.cord;
+				tempmi.qn = mi.qn;
 			}
 			if((find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //position has insertion
 			{
 				refC++;
 				temp.name = mi.qn;
 				temp.cord = qC-1;
-				mRef[refC-1].push_back(temp);
+				tempmi.x1 = refC-1;
+				tempmi.x2 = refC-1;
+				tempmi.y1 = temp.cord;
+				tempmi.y2 = temp.cord;
+				tempmi.qn = mi.qn;
 			}
 			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())) //position has deletion
 			{
 				qC++;
+			}
+			//cout<<tempmi.rn<<'\t'<<tempmi.x1<<'\t'<<tempmi.x2<<'\t'<<tempmi.qn<<'\t'<<tempmi.y1<<'\t'<<tempmi.y2<<endl;
+			if((cm.x1 == tempmi.x1) && (liftmi.y1 ==0))//if liftmi hasn't been changed yet
+			{
+				liftmi.y1 = tempmi.y1;
+			}
+			if((cm.x2 == tempmi.x2) && (liftmi.y2 ==0))		
+			{
+				liftmi.y2 = tempmi.y2;
 			}
 		}
 	}
@@ -91,43 +76,82 @@ void storeCords(map<int,vq> & mRef, mI & mi)
 				qC--;
 				temp.name = mi.qn;
 				temp.cord = qC+1;	
-				mRef[refC-1].push_back(temp);
+				tempmi.x1 = refC-1;
+				tempmi.x2 = refC-1;
+				tempmi.y1 = temp.cord;
+				tempmi.y2 = temp.cord;
+				tempmi.qn = mi.qn;
 			}
 			if((find(mi.mv.begin(),mi.mv.end(),refC) != mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) == mi.mv.end())) //position has insertion
 			{
 				refC++;
 				temp.name = mi.qn;
 				temp.cord = qC+1;
-				mRef[refC-1].push_back(temp);				
+				tempmi.x1 = refC-1;
+				tempmi.x2 = refC-1;
+				tempmi.y1 = temp.cord;
+				tempmi.y2 = temp.cord;
+				tempmi.qn = mi.qn;
 			}
 			if((find(mi.mv.begin(),mi.mv.end(),refC) == mi.mv.end()) && (find(mi.mv.begin(),mi.mv.end(),ci) != mi.mv.end())) //position has deletion
 			{
 				qC--;
 			}
+			//cout<<tempmi.rn<<'\t'<<tempmi.x1<<'\t'<<tempmi.x2<<'\t'<<tempmi.qn<<'\t'<<tempmi.y1<<'\t'<<tempmi.y2<<endl;
+			if((cm.x1 == tempmi.x1) && (liftmi.y1 ==0))//if liftmi hasn't been changed yet
+			{
+				liftmi.y1 = tempmi.y1;
+			}
+			if((cm.x2 == tempmi.x2) && (liftmi.y2 ==0))
+			{
+				liftmi.y2 = tempmi.y2;
+			}
 		}
 	}
+	return liftmi;
 }
 		
 	
 ////////////////////////////////////////////////////
-void findQuery(map<int,vq> & mRef, mI & mi,string & refName)
+vector<mI> findMum(vector<mI> & mums,mI & cm)
 {
-	
-	if((mRef[mi.x1]. size() >0) && (mRef[mi.x2].size()>0)) //if the position has something
+	unsigned int i =0;
+	mI tempmi;
+	vector<mI> vmi;
+	while(!(cm.x2 < mums[i].x1))
 	{
-		for(unsigned int j=0; j<min(mRef[mi.x1].size(),mRef[mi.x2].size());j++)//traverse all items at position i
+//cout<<"all\t"<<cm.rn<<'\t'<<cm.x1<<'\t'<<cm.x2<<'\t'<<mums[i].rn<<'\t'<<mums[i].x1<<'\t'<<mums[i].x2<<'\t'<<mums[i].mv.size()<<endl;
+		//if(!((cm.x2 < mums[i].x1) && (cm.x1 > mums[i].x2)))
+		if(!(cm.x2 < mums[i].x1) && !(cm.x1 > mums[i].x2))
 		{
-			if(mRef[mi.x1][j].name == mRef[mi.x2][j].name)
-			{
-				cout<<refName<<"\t"<<mi.x1<<"\t"<<mi.x2<<"\t"<<mRef[mi.x1][j].name<<"\t"<<mRef[mi.x1][j].cord<<"\t"<<mRef[mi.x2][j].cord<<endl;
-			}
+			tempmi = mums[i];
+			vmi.push_back(tempmi);
+cout<<"query\t"<<cm.rn<<'\t'<<cm.x1<<'\t'<<cm.x2<<'\t'<<mums[i].rn<<'\t'<<mums[i].x1<<'\t'<<mums[i].x2<<'\t'<<mums[i].mv.size()<<endl;
+		}
+		++i;
+	}
+	return vmi;
+}
+//////////////////////////////////////////////////////
+void writeLift(vector<mI> & vmi,mI & cm,ofstream & fout)
+{
+	mI tempmi;
+	for(unsigned int i=0;i<vmi.size();i++)
+	{
+		tempmi = liftCords(cm,vmi[i]);
+		if((tempmi.y1 != 0) && (tempmi.y2 !=0))
+		{
+			fout<<tempmi.rn<<'\t'<<tempmi.x1<<'\t'<<tempmi.x2<<'\t'<<tempmi.qn<<'\t'<<tempmi.y1<<'\t'<<tempmi.y2<<endl;
+		}
+		if(tempmi.y1 ==0)
+		{
+			fout<<tempmi.rn<<'\t'<<tempmi.x1<<'\t'<<tempmi.x2<<'\t'<<tempmi.qn<<'\t'<<"NA"<<'\t'<<tempmi.y2<<endl;
+		}
+		if(tempmi.y2 == 0)
+		{
+			fout<<tempmi.rn<<'\t'<<tempmi.x1<<'\t'<<tempmi.x2<<'\t'<<tempmi.qn<<'\t'<<tempmi.y1<<'\t'<<"NA"<<endl;
 		}
 	}
-	else //if the position is empty
-	{
-	//dunno what to do yet		
-	}	
-	
 }
 /////////////////////////////////////////////////
 vector<string> splitField(string & str, char c)
