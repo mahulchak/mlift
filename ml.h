@@ -60,6 +60,6 @@ class chromPair {
 bool qusort(mI mi1, mI mi2); //to sort the mI based on query coordinates
 mI liftCords(mI & cm,mI & mi); //extract the lifted coordinates
 vector<mI> findMum(vector<mI> & mums,mI & cm);
-void writeLift(vector<mI> & vmi,mI & cm,ofstream & fout);
+void writeLift(vector<mI> & vmi,mI cm,ofstream & fout, char & c);
 vector<string> splitField(string & str, char c);
 #endif

@@ -8,14 +8,15 @@ using ccov = vector<int>;
 using vq = vector<qord>;
 int main(int argc, char *argv[])
 {
-	if(argc <2)
+	if((argc <3)||(string(argv[1]) == "-h")||(string(argv[1]) == "--help"))
 	{
-		cerr<<"Usage: "<<argv[0]<<" foo.delta foo.bed"<<endl;
+		cerr<<"Usage: "<<argv[0]<<" foo.delta foo.bed mode(s/n)"<<endl;
 		exit(EXIT_FAILURE);
 	}
 
 	chroms allChrom;
-	
+	char mode = 'n';
+	mode = argv[3][0];
 	map<string,ccov> masterRef; //stores sequence coverage but it can also be used to find reference chromosome lengths
 	map<string,ccov>masterQ; //stores sequence coverage but it can also be used to find query chromosome lengths
 	map<string,ccov>masterHQ; //same as masterQ but records coverage only for homologous pairs
@@ -113,10 +114,9 @@ int main(int argc, char *argv[])
 		for(unsigned int j=0; j<cp[refName].size();j++)
 		{
 			indexAln = cp[refName][j];
-//cout<<refName<<'\t'<<cm[i].x1<<'\t'<<cm[i].x2<<'\t'<<indexAln<<'\t'<<allChrom[indexAln].mums[0].x1<<'\t'<<allChrom[indexAln].mums[0].x2<<'\t'<<allChrom[indexAln].mums[allChrom[indexAln].mums.size()-1].x1<<'\t'<<allChrom[indexAln].mums[allChrom[indexAln].mums.size()-1].x2<<endl;
 			sort(allChrom[indexAln].mums.begin(),allChrom[indexAln].mums.end());
 			vmi = findMum(allChrom[indexAln].mums,cm[i]);//find the mum corresponding to cm
-			writeLift(vmi,cm[i],fout);
+			writeLift(vmi,cm[i],fout,mode);
 		}
 	}
 	fout.close();

@@ -126,18 +126,23 @@ vector<mI> findMum(vector<mI> & mums,mI & cm)
 		{
 			tempmi = mums[i];
 			vmi.push_back(tempmi);
-cout<<"query\t"<<cm.rn<<'\t'<<cm.x1<<'\t'<<cm.x2<<'\t'<<mums[i].rn<<'\t'<<mums[i].x1<<'\t'<<mums[i].x2<<'\t'<<mums[i].mv.size()<<endl;
+//cout<<"query\t"<<cm.rn<<'\t'<<cm.x1<<'\t'<<cm.x2<<'\t'<<mums[i].rn<<'\t'<<mums[i].x1<<'\t'<<mums[i].x2<<'\t'<<mums[i].mv.size()<<endl;
 		}
 		++i;
 	}
 	return vmi;
 }
 //////////////////////////////////////////////////////
-void writeLift(vector<mI> & vmi,mI & cm,ofstream & fout)
+void writeLift(vector<mI> & vmi,mI cm,ofstream & fout, char & c)
 {
-	mI tempmi;
+	mI tempmi,mi;
 	for(unsigned int i=0;i<vmi.size();i++)
 	{
+		if(c=='s')//if sensitive mode is used
+		{
+			cm.x1 = max(cm.x1,vmi[i].x1);
+			cm.x2 = min(cm.x2,vmi[i].x2);
+		}
 		tempmi = liftCords(cm,vmi[i]);
 		if((tempmi.y1 != 0) && (tempmi.y2 !=0))
 		{
