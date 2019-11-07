@@ -59,7 +59,10 @@ class chromPair {
 
 bool qusort(mI mi1, mI mi2); //to sort the mI based on query coordinates
 mI liftCords(mI & cm,mI & mi); //extract the lifted coordinates
-vector<mI> findMum(vector<mI> & mums,mI & cm);
-void writeLift(vector<mI> & vmi,mI cm,ofstream & fout, char & c);
+void findMum(vector<mI> & mums,vector<mI> & cm,ofstream & fout,char & c, map<string,string> & refseq, map<string,string> & qseq);
+void writeLift(mI & vmi,mI & cm,ofstream & fout, char & c, map<string,string> & refseq, map<string,string> & qseq);
 vector<string> splitField(string & str, char c);
+int returnIndex(vector<int> & vi, int delPos);
+void readFasta(ifstream & fin, map<string,string> & seq);
+string revcom(string seq); //return the complementary nucleotide
 #endif
